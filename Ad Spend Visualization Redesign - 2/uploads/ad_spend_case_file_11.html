@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Before You Spend: A Political Ad Spend Case File</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+  :root {
+    --paper: #FFFFFF;
+    --paper-card: #F0F2F5;
+    --ink: #1C2B33;
+    --ink-soft: #65676B;
+    --rule: #DADDE1;
+    --green: #1E7A46;
+    --blue: #0668E1;
+    --red: #A23B34;
+    --brass: #0668E1;
+    --brass-bright: #0080FB;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-wrap: break-word;
+  }
+
+  h1, h2, h3, .display { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); margin: 0; }
+  .mono { font-family: 'IBM Plex Mono', 'SF Mono', monospace; }
+
+  img, svg { max-width: 100%; }
+
+  .eyebrow {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 0.78rem; letter-spacing: 0.04em; font-weight: 600;
+    text-transform: uppercase; color: var(--ink-soft); display: flex; align-items: center; gap: 10px;
+  }
+  .eyebrow::before { content: ""; width: 18px; height: 2px; background: var(--brass); border-radius: 2px; display: inline-block; }
+
+  a { color: var(--brass); }
+  button { font-family: inherit; cursor: pointer; }
+
+  /* ---------------- Intake screen ---------------- */
+  #intake { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 32px 20px; }
+  .intake-card {
+    max-width: 560px; width: 100%; background: var(--paper-card); border-radius: 20px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 12px 32px rgba(0,0,0,0.06); padding: 44px 40px;
+  }
+  .intake-card h1 { font-size: clamp(1.7rem, 4vw, 2.3rem); line-height: 1.15; margin-bottom: 14px; }
+  .intake-card .lede { color: var(--ink-soft); margin-bottom: 30px; font-size: 1rem; }
+  .field { margin-bottom: 22px; }
+  .field label {
+    display: block; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.02em;
+    color: var(--ink-soft); margin-bottom: 8px;
+  }
+  .field input[type="number"] {
+    width: 100%; padding: 12px 14px; font-family: inherit; font-size: 1.1rem; border-radius: 10px;
+    border: 1px solid var(--rule); background: var(--paper); color: var(--ink);
+  }
+  .field input[type="number"]:focus { outline: 2px solid var(--brass); outline-offset: 1px; }
+  .goal-options { display: grid; gap: 10px; }
+  .goal-option {
+    border: 1px solid var(--rule); border-radius: 12px; background: var(--paper); padding: 13px 16px; cursor: pointer;
+    display: flex; align-items: flex-start; gap: 12px; transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .goal-option:hover { border-color: var(--brass); }
+  .goal-option.selected { border-color: var(--brass); background: #EAF2FD; }
+  .goal-option input { margin-top: 3px; accent-color: var(--brass); }
+  .goal-option .opt-title { font-weight: 600; font-size: 0.95rem; }
+  .goal-option .opt-sub { color: var(--ink-soft); font-size: 0.85rem; margin-top: 2px; }
+  .intake-submit {
+    margin-top: 8px; width: 100%; padding: 15px; background: var(--ink); color: var(--paper); border: none;
+    border-radius: 980px; font-size: 0.95rem; font-weight: 600; transition: background 0.15s ease;
+  }
+  .intake-submit:hover { background: var(--brass); }
+  .skip-link { display: block; text-align: center; margin-top: 14px; font-size: 0.85rem; color: var(--ink-soft); cursor: pointer; text-decoration: underline; }
+
+  /* ---------------- Story ---------------- */
+  /* #story now shows directly, no intake gate */
+  #story.active { display: block; }
+
+  /* sticky cross-filter legend */
+  #filter-bar {
+    position: sticky; top: 0; z-index: 50; background: var(--paper);
+    border-bottom: 1px solid var(--rule); padding: 10px 8vw;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  #filter-bar .fb-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .fb-chip {
+    display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border: 1px solid var(--rule);
+    background: var(--paper-card); font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; border-radius: 3px;
+    transition: opacity 0.2s ease, border-color 0.2s ease;
+  }
+  .fb-chip:hover { border-color: var(--brass); }
+  .fb-chip.active-chip { border-color: var(--ink); background: var(--paper); font-weight: 600; }
+  .fb-chip .fb-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .fb-reset { font-size: 0.78rem; color: var(--ink-soft); text-decoration: underline; background: none; border: none; padding: 4px; }
+
+  [data-adv] { transition: opacity 0.25s ease; }
+  .dimmed { opacity: 0.15 !important; }
+
+  main#story { max-width: 1400px; margin: 0 auto; padding: 20px 3vw 40px; }
+  .dash-header { margin-bottom: 16px; }
+  .dash-header h1 { font-size: clamp(1.4rem, 2.6vw, 1.9rem); }
+  .dash-sub { margin-top: 6px; font-size: 0.92rem; color: var(--ink-soft); max-width: 900px; line-height: 1.5; }
+  .hook-num-inline { color: var(--brass); font-weight: 700; }
+
+  .dash-grid {
+    display: grid;
+    grid-template-columns: 240px 1fr 260px;
+    grid-template-areas:
+      "left hero right"
+      "map map map"
+      "pyramid pyramid pyramid";
+    gap: 14px;
+    align-items: stretch;
+  }
+  #panel-calculator { grid-area: left; }
+  #panel-top-spenders { grid-area: hero; }
+  #panel-value { grid-area: right; }
+  #panel-map { grid-area: map; }
+  #panel-pyramid { grid-area: pyramid; }
+  #panel-calculator, #panel-top-spenders, #panel-value { display: flex; flex-direction: column; }
+  #panel-calculator .calc-widget, #panel-top-spenders #chart-top-spenders, #panel-value #chart-slope { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  @media (max-width: 1100px) {
+    .dash-grid { grid-template-columns: 1fr; grid-template-areas: "hero" "left" "right" "map" "pyramid"; }
+    #panel-calculator, #panel-top-spenders, #panel-value { display: block; }
+  }
+
+  .mini-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .mini-title { font-size: 0.8rem; font-weight: 600; color: var(--ink-soft); margin-bottom: 8px; }
+
+  .scene-head { margin-bottom: 36px; }
+  .scene-head h2 { font-size: clamp(1.75rem, 3.6vw, 2.6rem); line-height: 1.15; margin-top: 10px; max-width: 20ch; }
+  .scene-head .dek { margin-top: 14px; font-size: 1.05rem; color: var(--ink-soft); max-width: 64ch; line-height: 1.55; }
+
+  .stamp {
+    display: inline-block; font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.02em; padding: 5px 12px; border-radius: 980px;
+  }
+  .stamp.verified { color: var(--green); background: rgba(30,122,70,0.1); }
+  .stamp.caution { color: var(--red); background: rgba(162,59,52,0.1); }
+  .stamp.you { color: var(--brass); background: rgba(0,113,227,0.1); }
+
+  .panel, .dash-panel { background: var(--paper-card); border-radius: 12px; padding: 16px 18px; }
+  .callout { background: var(--paper-card); border-radius: 14px; padding: 18px 22px; margin: 24px 0; font-size: 0.98rem; }
+  .callout b { color: var(--ink); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  @media (max-width: 860px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .chart-title { font-size: 0.92rem; font-weight: 600; color: var(--ink); margin-bottom: 14px; display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+  .chart-type-tag { font-weight: 400; font-size: 0.76rem; color: var(--ink-soft); }
+  .chart-guide { margin: 0; color: var(--ink-soft); font-size: 0.85rem; line-height: 1.55; padding-top: 14px; border-top: 1px solid var(--rule); }
+  .chart-guide b { color: var(--ink); }
+  .bar-label { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; font-size: 0.85rem; }
+  .value-label { font-family: 'IBM Plex Mono', 'SF Mono', monospace; font-size: 0.82rem; font-weight: 600; }
+
+  .state-list { list-style: none; margin: 0; padding: 0; }
+  .state-list li { display: grid; grid-template-columns: 90px 1fr 70px; align-items: center; gap: 10px; margin-bottom: 7px; font-size: 0.85rem; }
+  .state-bar-track { background: var(--rule); height: 8px; border-radius: 4px; position: relative; }
+  .state-bar-fill { height: 100%; border-radius: 4px; }
+
+  .pyramid-panel { border-radius: 18px; background: var(--paper-card); padding: 28px; }
+  .pyramid-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .pyramid-legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0 4px; font-size: 0.82rem; }
+  .pyramid-legend-item { display: flex; align-items: center; gap: 7px; cursor: pointer; padding: 4px 10px; border-radius: 980px; transition: opacity 0.2s ease, background 0.15s ease; }
+  .pyramid-legend-item:hover { background: rgba(0,0,0,0.04); }
+  .pyramid-legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .pyramid-side-label { font-size: 0.72rem; letter-spacing: 0.06em; font-weight: 600; text-transform: uppercase; color: var(--ink-soft); }
+  .pyramid-note { font-size: 0.82rem; color: var(--ink-soft); margin-top: 10px; }
+
+  .adv-card { border-radius: 14px; background: var(--paper-card); padding: 20px; }
+  .adv-card h4 { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+  .adv-swatch { width: 10px; height: 10px; display: inline-block; margin-right: 8px; border-radius: 50%; vertical-align: middle; }
+
+  .limits-list { list-style: none; margin: 0; padding: 0; }
+  .limits-list li { padding: 20px 0; border-top: 1px solid var(--rule); display: grid; grid-template-columns: 150px 1fr; gap: 20px; }
+  .limits-list li:last-child { border-bottom: 1px solid var(--rule); }
+  .limits-list .lim-tag { font-size: 0.82rem; font-weight: 600; color: var(--red); }
+  @media (max-width: 700px) { .limits-list li { grid-template-columns: 1fr; } }
+
+  footer.story-footer { max-width: 1080px; margin: 0 auto; padding: 36px 6vw 88px; color: var(--ink-soft); font-size: 0.88rem; border-top: 1px solid var(--rule); line-height: 1.6; }
+  .hook-num { font-weight: 700; letter-spacing: -0.02em; font-size: clamp(3rem, 10vw, 6.4rem); line-height: 0.98; color: var(--brass); }
+
+  .axis text { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; font-size: 10.5px; fill: var(--ink-soft); }
+  .axis path, .axis line { stroke: var(--rule); }
+
+  /* ---------------- Tooltip ---------------- */
+  #tooltip {
+    position: fixed; pointer-events: none; z-index: 999; background: var(--ink); color: var(--paper);
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; font-size: 0.8rem; padding: 9px 13px; border-radius: 10px;
+    max-width: 240px; opacity: 0; transition: opacity 0.1s ease; line-height: 1.45;
+  }
+  #tooltip b { color: var(--brass-bright); }
+
+  /* ---------------- Spend calculator ---------------- */
+  .calc-widget { background: var(--paper); border-radius: 10px; padding: 16px 18px; }
+  .calc-widget .calc-amount { font-weight: 700; letter-spacing: -0.02em; font-size: 2.6rem; color: var(--ink); }
+  .calc-slider { width: 100%; margin: 18px 0 8px; accent-color: var(--brass); height: 6px; }
+  .calc-hint { font-size: 0.8rem; color: var(--ink-soft); display: flex; justify-content: space-between; }
+  .calc-results { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 24px; }
+  .calc-result { border-radius: 14px; background: var(--paper); padding: 16px; text-align: center; }
+  .calc-result .cr-name { font-size: 0.8rem; font-weight: 600; margin-bottom: 8px; }
+  .calc-result .cr-num { font-family: 'IBM Plex Mono', 'SF Mono', monospace; font-weight: 700; font-size: 1.6rem; }
+  .calc-result .cr-sub { font-size: 0.74rem; color: var(--ink-soft); margin-top: 3px; }
+  .calc-method { margin: 18px 0 0; color: var(--ink-soft); font-size: 0.85rem; line-height: 1.55; padding-top: 14px; border-top: 1px solid var(--rule); }
+  .calc-method .mono { color: var(--ink); font-size: 0.8rem; }
+
+  /* ---------------- Map ---------------- */
+  .map-controls { display: flex; gap: 8px; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
+  .map-toggle-btn {
+    padding: 8px 16px; border: none; background: var(--paper); font-size: 0.85rem; font-weight: 500;
+    border-radius: 980px; color: var(--ink-soft); transition: background 0.15s ease, color 0.15s ease;
+  }
+  .map-toggle-btn.active-toggle { background: var(--ink); color: var(--paper); }
+  .map-fallback-note { font-size: 0.82rem; color: var(--ink-soft); font-style: italic; margin-top: 8px; }
+  #us-map path { stroke: var(--paper-card); stroke-width: 0.6; cursor: pointer; }
+  #us-map path:hover { stroke: var(--ink); stroke-width: 1.3; }
+  .targeting-compare { display: flex; flex-direction: column; gap: 28px; }
+  #us-map-container { width: 100%; max-width: 720px; margin: 0 auto; }
+  .state-compare-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .state-compare-card { border-top: 2px solid var(--ink); padding-top: 10px; }
+  .state-compare-card h4 { font-size: 1rem; font-weight: 700; margin: 0 0 7px; }
+  .state-compare-card svg { display: block; width: 100%; height: auto; }
+  .selected-state { stroke: var(--ink) !important; stroke-width: 2.5 !important; }
+  .map-key { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.78rem; color: var(--ink-soft); margin: 8px 0 0; justify-content: center; }
+  .map-key span::before { content: ''; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; background: var(--key-color); vertical-align: -1px; }
+  @media (max-width: 860px) { .state-compare-list { grid-template-columns: 1fr; } }
+
+  /* ---------------- Timing play ---------------- */
+  .play-controls { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+  .play-btn {
+    padding: 9px 20px; background: var(--ink); color: var(--paper); border: none; font-size: 0.85rem;
+    font-weight: 500; border-radius: 980px;
+  }
+  .play-btn:hover { background: var(--brass); }
+  .play-date-label { font-family: 'IBM Plex Mono', 'SF Mono', monospace; font-size: 0.85rem; color: var(--ink-soft); min-width: 90px; }
+  .play-progress { flex: 1; height: 4px; background: var(--rule); border-radius: 2px; position: relative; min-width: 120px; }
+  .play-progress-fill { height: 100%; background: var(--brass); width: 0%; border-radius: 2px; transition: width 0.05s linear; }
+
+  ::selection { background: var(--brass); color: #fff; }
+</style>
+</head>
+<body>
+
+<div id="tooltip"></div>
+
+<!-- ============= STORY ============= -->
+<main id="story">
+
+  <header class="dash-header">
+    <h1>Political Ad Spend Case File</h1>
+    <p class="dash-sub">Meta Ad Library, US political &amp; social-issue ads, last 30 days &mdash; <span class="hook-num-inline">14,071</span> advertisers disclosed spend. This dashboard follows the three biggest: Ground News, Democrats, and Abdul El-Sayed.</p>
+  </header>
+
+  <div class="dash-grid">
+
+    <section class="dash-panel" id="panel-top-spenders">
+      <div class="chart-title">Top 25 advertisers by ad spend <span class="chart-type-tag">Vertical bar chart</span></div>
+      <div id="chart-top-spenders"></div>
+      <p class="chart-guide">Ground News, Democrats, and Abdul El-Sayed rank 1st&ndash;3rd in spend (highlighted). Hover any bar for exact numbers.</p>
+    </section>
+
+    <section class="dash-panel" id="panel-calculator">
+      <div class="chart-title">What a dollar buys <span class="chart-type-tag">Interactive calculator</span></div>
+      <div class="calc-widget">
+        <div class="calc-hint"><span>TEST AMOUNT</span><span id="calc-amount-label"></span></div>
+        <div class="calc-amount" id="calc-amount-display">$500</div>
+        <input type="range" id="calc-slider" class="calc-slider" min="0" max="1000" value="500">
+        <div class="calc-hint"><span>$1</span><span>$50,000</span></div>
+        <div class="calc-results" id="calc-results"></div>
+      </div>
+      <p class="chart-guide">Move the slider to see the same budget turned into estimated impressions at each advertiser's real observed rate.</p>
+    </section>
+
+    <section class="dash-panel" id="panel-value">
+      <div class="chart-title">Reach vs. cost <span class="chart-type-tag">Slopegraph</span></div>
+      <div id="chart-slope"></div>
+      <p class="chart-guide">The biggest spender didn't win on value &mdash; Abdul El-Sayed got the most reach per dollar despite spending the least.</p>
+    </section>
+
+    <section class="dash-panel" id="panel-map">
+      <div class="chart-title">Who and where <span class="chart-type-tag">Choropleth map</span></div>
+      <div class="targeting-compare">
+        <div id="us-map-container"><svg id="us-map" width="100%" viewBox="0 0 960 600"></svg><div class="map-key" id="map-key"></div></div>
+        <div class="state-compare-list" id="state-compare-list"></div>
+      </div>
+      <p class="chart-guide">Each state shows all three advertisers' reported ad spend.</p>
+    </section>
+
+    <section class="dash-panel" id="panel-pyramid">
+      <div class="chart-title">Reach by age &amp; gender <span class="chart-type-tag">Population pyramid</span></div>
+      <div id="chart-pyramid"></div>
+      <div class="pyramid-legend" id="pyramid-legend"></div>
+      <p class="pyramid-note" id="pyramid-note"></p>
+      <p class="chart-guide">Men's bars extend left, women's extend right. Each bar is a share of that advertiser's own total reach, so advertisers of different sizes are comparable.</p>
+    </section>
+
+  </div>
+
+  <footer class="story-footer">
+    <p>Source: Meta Ad Library, US social issue / election / politics ad disclosures. Aggregate file: 14,071 advertisers (deduplicated by Page ID), last 30 days. Per-ad detail: 782 / 263 / 72 ads for Ground News, Democrats, and Abdul El-Sayed respectively. Numbers are estimates (midpoints of Meta's disclosed ranges), not exact figures. US state boundaries: Natural Earth via us-atlas.</p>
+  </footer>
+
+</main>
+
+
+<script>
+(function () {
+  const topSpenders = [{"name": "Ground News", "spend": 1139987.0, "ads": 1877, "highlight": true, "color": "#2f6b4f"}, {"name": "Democrats", "spend": 1129082.0, "ads": 1078, "highlight": true, "color": "#3a5a78"}, {"name": "Abdul El-Sayed", "spend": 1073942.0, "ads": 995, "highlight": true, "color": "#b3261e"}, {"name": "Jon Ossoff", "spend": 1070586.0, "ads": 49, "highlight": false, "color": "#9a9a9a"}, {"name": "WorkMoney", "spend": 933625.0, "ads": 959, "highlight": false, "color": "#9a9a9a"}, {"name": "James Talarico", "spend": 793570.0, "ads": 48, "highlight": false, "color": "#9a9a9a"}, {"name": "One Nation", "spend": 766253.0, "ads": 567, "highlight": false, "color": "#9a9a9a"}, {"name": "Wildfire Victims First", "spend": 693773.0, "ads": 77, "highlight": false, "color": "#9a9a9a"}, {"name": "bethepeople", "spend": 595575.0, "ads": 177, "highlight": false, "color": "#9a9a9a"}, {"name": "Dale Williams", "spend": 537110.0, "ads": 47, "highlight": false, "color": "#9a9a9a"}, {"name": "Liberty Point USA", "spend": 535698.0, "ads": 1837, "highlight": false, "color": "#9a9a9a"}, {"name": "The Patriotic Prophet", "spend": 491723.0, "ads": 347, "highlight": false, "color": "#9a9a9a"}, {"name": "JPMorganChase", "spend": 474044.0, "ads": 120, "highlight": false, "color": "#9a9a9a"}, {"name": "The New Yorker", "spend": 460339.0, "ads": 111, "highlight": false, "color": "#9a9a9a"}, {"name": "Katherine Amara Whitmore", "spend": 441650.0, "ads": 2503, "highlight": false, "color": "#9a9a9a"}, {"name": "Missouri Promise", "spend": 414756.0, "ads": 442, "highlight": false, "color": "#9a9a9a"}, {"name": "American Bridge 21st Century", "spend": 405652.0, "ads": 129, "highlight": false, "color": "#9a9a9a"}, {"name": "Elizabeth Miller", "spend": 394622.0, "ads": 924, "highlight": false, "color": "#9a9a9a"}, {"name": "Tim Tebow", "spend": 379483.0, "ads": 451, "highlight": false, "color": "#9a9a9a"}, {"name": "Troy Jackson", "spend": 371770.0, "ads": 1536, "highlight": false, "color": "#9a9a9a"}, {"name": "MAHA Movie", "spend": 354771.0, "ads": 21, "highlight": false, "color": "#9a9a9a"}, {"name": "One Nation, Overcharged", "spend": 320961.0, "ads": 199, "highlight": false, "color": "#9a9a9a"}, {"name": "Sandy Hook Promise", "spend": 319932.0, "ads": 243, "highlight": false, "color": "#9a9a9a"}, {"name": "Turning Point PAC", "spend": 319827.0, "ads": 158, "highlight": false, "color": "#9a9a9a"}, {"name": "Rep. Gina Hinojosa", "spend": 314099.0, "ads": 1559, "highlight": false, "color": "#9a9a9a"}];
+
+  const container = document.getElementById("chart-top-spenders");
+  if (!container || typeof d3 === "undefined") return;
+
+  const width = 1100;
+  const height = 570;
+  const margin = { top: 45, right: 35, bottom: 155, left: 80 };
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
+
+  const svg = d3.select(container)
+    .append("svg")
+    .attr("viewBox", `0 0 ${width} ${height}`)
+    .attr("width", "100%")
+    .attr("role", "img")
+    .attr("aria-label", "Bar chart of the top 25 advertisers by reported ad spend, with Ground News, Democrats, and Abdul El-Sayed highlighted.");
+
+  const g = svg.append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  const x = d3.scaleBand()
+    .domain(topSpenders.map(d => d.name))
+    .range([0, innerWidth])
+    .padding(0.18);
+
+  const y = d3.scaleLinear()
+    .domain([0, d3.max(topSpenders, d => d.spend) * 1.12])
+    .nice()
+    .range([innerHeight, 0]);
+
+  const grid = g.append("g")
+    .attr("class", "grid")
+    .call(
+      d3.axisLeft(y)
+        .ticks(6)
+        .tickSize(-innerWidth)
+        .tickFormat("")
+    );
+
+  grid.selectAll("line")
+    .attr("stroke", "var(--rule)")
+    .attr("stroke-opacity", 0.65);
+
+  grid.select(".domain").remove();
+
+  g.append("g")
+    .attr("class", "y-axis")
+    .call(
+      d3.axisLeft(y)
+        .ticks(6)
+        .tickFormat(d => d >= 1000000 ? `$${(d / 1000000).toFixed(1)}M` : `$${Math.round(d / 1000)}K`)
+    );
+
+  g.append("g")
+    .attr("transform", `translate(0,${innerHeight})`)
+    .call(d3.axisBottom(x).tickSize(0))
+    .selectAll("text")
+    .attr("transform", "rotate(-62)")
+    .style("text-anchor", "end")
+    .attr("dy", "0.45em")
+    .attr("dx", "-0.35em")
+    .style("font-size", "11px")
+    .style("font-family", "'IBM Plex Mono', monospace");
+
+  g.selectAll(".domain").attr("stroke", "var(--rule)");
+
+  const bars = g.selectAll(".bar")
+    .data(topSpenders)
+    .join("rect")
+    .attr("class", "bar")
+    .attr("data-adv", d => d.highlight ? d.name : null)
+    .attr("x", d => x(d.name))
+    .attr("y", d => y(d.spend))
+    .attr("width", x.bandwidth())
+    .attr("height", d => innerHeight - y(d.spend))
+    .attr("rx", 1)
+    .attr("fill", d => d.color)
+    .attr("opacity", 1)
+    .style("cursor", "pointer");
+
+  const rankOf = d => topSpenders.indexOf(d) + 1;
+
+  bars
+    .on("mouseenter", function (event, d) {
+      g.selectAll(".bar").attr("opacity", b => (b === d ? 1 : 0.45));
+      d3.select(this).attr("stroke", "var(--ink)").attr("stroke-width", 1.5);
+    })
+    .on("mousemove", function (event, d) {
+      const spendStr = d.spend >= 1000000 ? `$${(d.spend / 1000000).toFixed(2)}M` : `$${d3.format(",.0f")(d.spend)}`;
+      const label = d.highlight ? ` <span style="color:${d.color};">&#9679;</span> case-study advertiser (click to highlight everywhere)` : "";
+      if (typeof showTooltip === "function") {
+        showTooltip(`<b>#${rankOf(d)} &mdash; ${d.name}</b>${label}<br>${spendStr} reported spend<br>${d3.format(",.0f")(d.ads)} ads`, event);
+      }
+    })
+    .on("mouseleave", function () {
+      g.selectAll(".bar").attr("opacity", 1);
+      d3.select(this).attr("stroke", "none");
+      if (typeof hideTooltip === "function") hideTooltip();
+    })
+    .on("click", (event, d) => {
+      if (d.highlight && typeof setHighlight === "function") setHighlight(d.name);
+    });
+
+  // Value labels are shown on every bar, with the three case-study advertisers
+  // receiving slightly stronger emphasis.
+  g.selectAll(".bar-label")
+    .data(topSpenders)
+    .join("text")
+    .attr("class", "bar-label")
+    .attr("x", d => x(d.name) + x.bandwidth() / 2)
+    .attr("y", d => y(d.spend) + 18)
+    .attr("text-anchor", "middle")
+    .attr("fill", d => d.highlight ? "#ffffff" : "#ffffff")
+    .style("font-size", d => d.highlight ? "11px" : "9px")
+    .style("font-weight", d => d.highlight ? "700" : "500")
+    .style("font-family", "'IBM Plex Mono', monospace")
+    .text(d => d.spend >= 1000000 ? `$${(d.spend / 1000000).toFixed(2)}M` : `$${(d.spend / 1000).toFixed(0)}K`);
+
+  // Add a subtle ranking marker above the three highlighted bars.
+  g.selectAll(".highlight-marker")
+    .data(topSpenders.filter(d => d.highlight))
+    .join("text")
+    .attr("class", "highlight-marker")
+    .attr("x", d => x(d.name) + x.bandwidth() / 2)
+    .attr("y", d => y(d.spend) - 12)
+    .attr("text-anchor", "middle")
+    .attr("fill", d => d.color)
+    .style("font-size", "10px")
+    .style("font-weight", "700")
+    .style("font-family", "'IBM Plex Mono', monospace")
+    .text((d, i) => `#${i + 1}`);
+
+  // Legend for the highlighting.
+  const legend = svg.append("g")
+    .attr("transform", `translate(${width - 365},12)`);
+
+  [
+    ["Ground News", "#2f6b4f"],
+    ["Democrats", "#3a5a78"],
+    ["Abdul El-Sayed", "#b3261e"]
+  ].forEach((item, i) => {
+    const row = legend.append("g").attr("transform", `translate(${i * 120},0)`);
+    row.append("rect")
+      .attr("width", 10)
+      .attr("height", 10)
+      .attr("rx", 1)
+      .attr("fill", item[1]);
+    row.append("text")
+      .attr("x", 15)
+      .attr("y", 9)
+      .style("font-size", "9px")
+      .style("font-family", "'IBM Plex Mono', monospace")
+      .attr("fill", "var(--ink)")
+      .text(item[0]);
+  });
+})();
+</script>
+
+<script id="story-data" type="application/json">{"spend_benchmark": {"percentiles": [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74, 76, 78, 80, 82, 84, 86, 88, 90, 92, 94, 96, 98, 100], "percentile_values": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 118.0, 144.0, 169.0, 199.0, 240.0, 287.0, 337.2000000000007, 405.0, 471.0, 562.7999999999993, 694.0, 860.4000000000015, 1053.6000000000004, 1339.0, 1697.0, 2127.0, 2723.199999999999, 3508.2000000000007, 4705.0, 6645.200000000004, 9875.799999999974, 17113.99999999997, 41006.000000000065, 1411786.0], "histogram": {"zero_count": 7378, "edges": [1.0, 1.6295248791659234, 2.6553513318207176, 4.326961058128228, 7.0508906954020585, 11.48960180843717, 18.72259199855816, 30.50892946412337, 49.71505959850732, 81.01192648498433, 132.0109497164427, 215.1151268852651, 350.53545114447394, 571.2062386695715, 930.7947770468551, 1516.7532465955492, 2471.5871508831347, 4027.5127533908894, 6562.932232808505, 10694.461353641424, 17426.890845037164, 28397.552198496953, 46274.517814863706, 75405.47805072724, 122875.10250905987, 200228.03656857647, 326276.56709503935, 531675.783570217, 866378.9169777046, 1411785.9999999993], "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 400, 792, 778, 801, 640, 616, 588, 530, 413, 333, 244, 178, 125, 90, 70, 41, 31, 12, 6, 4]}, "n_advertisers": 14071}, "advertisers_summary": [{"name": "Ground News", "color": "#2f6b4f", "n_ads_total": 782, "n_ads_clean": 562, "total_spend_peradfile": 779669.0, "total_impressions": 13343519.5, "imp_per_dollar": 17.11433890535599, "median_cost_per_1k": 90.08189262966333, "agg_true_spend": 1411786.0}, {"name": "Democrats", "color": "#3a5a78", "n_ads_total": 263, "n_ads_clean": 242, "total_spend_peradfile": 699579.0, "total_impressions": 10702979.5, "imp_per_dollar": 15.299172073489913, "median_cost_per_1k": 76.66824822881918, "agg_true_spend": 1297818.0}, {"name": "Abdul El-Sayed", "color": "#b3261e", "n_ads_total": 72, "n_ads_clean": 72, "total_spend_peradfile": 297314.0, "total_impressions": 10334965.5, "imp_per_dollar": 34.76111283020645, "median_cost_per_1k": 27.61515425725993, "agg_true_spend": 1073942.0}], "cost_distributions": {"Ground News": [90.08, 90.08, 90.08, 90.08, 90.08, 26.31, 90.08, 90.08, 90.08, 19.8, 90.08, 90.08, 14.14, 77.76, 30.89, 90.08, 90.08, 90.08, 35.96, 90.08, 90.08, 90.08, 71.3, 90.08, 90.08, 90.08, 90.08, 59.81, 90.08, 59.81, 90.08, 90.08, 90.08, 54.26, 90.08, 29.35, 71.3, 90.08, 33.01, 89.43, 59.81, 90.08, 81.73, 90.08, 90.08, 90.08, 90.08, 68.37, 14.14, 90.08, 90.08, 33.01, 90.08, 90.08, 90.08, 59.81, 77.68, 33.23, 90.08, 90.08, 90.08, 99.7, 90.08, 59.81, 63.55, 90.08, 99.82, 33.01, 90.08, 99.87, 33.01, 33.01, 90.08, 33.01, 33.23, 42.72, 90.08, 90.08, 128.45, 90.08, 59.81, 33.01, 90.08, 81.8, 90.08, 55.45, 90.08, 90.08, 90.08, 77.68, 71.3, 33.01, 99.7, 90.08, 90.08, 90.08, 99.9, 90.08, 90.08, 99.82, 90.08, 36.83, 68.17, 90.08, 272.07, 90.08, 90.08, 90.08, 5.99, 5.82, 99.7, 90.08, 90.08, 90.08, 33.01, 90.08, 33.01, 90.08, 33.01, 90.08, 99.95, 90.08, 76.46, 90.08, 90.08, 90.08, 99.82, 90.08, 90.08, 90.08, 90.08, 15.55, 23.62, 90.08, 55.53, 75.96, 63.62, 86.36, 113.33, 84.6, 90.08, 90.08, 90.08, 99.7, 90.08, 90.08, 90.08, 90.08, 81.73, 59.94, 59.81, 99.87, 77.26, 78.9, 84.6, 99.7, 99.7, 99.96, 126.61, 19.8, 11.81, 9.0, 90.08, 90.08, 11.96, 90.08, 33.01, 90.08, 19.23, 33.33, 33.27, 22.73, 23.68, 45.45, 23.63, 90.08, 32.35, 55.53, 90.08, 20.0, 33.33, 28.88, 9.0, 90.08, 16.66, 90.08, 22.72, 90.08, 90.08, 14.14, 90.08, 27.96, 90.08, 90.08, 90.08, 90.08, 90.08, 90.08, 19.98, 23.0, 27.5, 33.01, 90.08, 90.08, 90.08, 90.08, 19.98, 90.08, 90.08, 90.08, 90.08, 90.08, 33.01, 90.08, 33.01, 33.01, 84.61, 90.08, 90.08, 90.08, 90.08, 90.08, 90.08, 71.3, 33.01, 90.08, 42.72, 90.08, 29.33, 33.23, 90.08, 90.08, 90.08, 90.08, 90.08, 100.0, 59.81, 90.08, 90.08, 90.08, 90.08, 90.08, 90.08, 90.08, 29.23, 90.08, 81.8, 45.37, 90.08, 166.66, 146.66, 90.08, 33.01, 27.18, 90.08, 99.96, 147.01, 90.08, 33.01, 90.08, 90.08, 81.8, 19.8, 99.82, 33.01, 77.68, 63.55, 57.69, 19.8, 90.08, 47.32, 90.08, 90.08, 99.97, 99.99, 77.68, 43.96, 55.45, 90.08, 90.08, 33.01, 90.08, 90.08, 22.72, 99.7, 90.08, 90.08, 90.08, 90.08, 42.72, 90.08, 90.08, 90.08, 33.01, 59.81, 219.97, 59.81, 139.97, 138.46, 99.82, 90.08, 33.01, 59.81, 19.99, 40.9, 6.6, 33.33, 33.33, 50.0, 33.01, 32.35, 22.72, 42.72, 26.31, 90.08, 90.08, 49.99, 90.08, 27.96, 33.01, 42.72, 90.08, 35.96, 52.89, 90.08, 90.08, 99.7, 90.08, 90.08, 90.08, 90.08, 99.7, 115.32, 90.08, 90.08, 99.96, 33.01, 90.08, 90.08, 99.92, 90.08, 59.81, 77.68, 90.08, 33.01, 90.08, 99.99, 89.46, 59.94, 113.32, 90.08, 71.4, 33.01, 59.94, 73.27, 90.08, 71.3, 99.98, 139.97, 77.76, 33.01, 71.4, 90.08, 67.96, 33.01, 100.0, 81.73, 113.32, 77.76, 90.08, 99.98, 42.72, 126.66, 99.87, 99.82, 51.96, 122.2, 99.99, 19.8, 90.08, 126.61, 144.35, 33.01, 90.08, 71.3, 77.76, 42.72, 63.55, 90.08, 99.99, 88.23, 81.8, 147.05, 99.92, 76.42, 33.23, 90.08, 19.96, 90.08, 42.72, 157.12, 90.08, 99.97, 33.01, 33.01, 59.81, 77.68, 19.8, 122.2, 115.38, 75.96, 128.55, 99.93, 90.08, 33.01, 90.08, 88.22, 90.08, 71.4, 90.08, 90.08, 111.75, 71.4, 90.08, 99.9, 90.08, 99.96, 59.81, 33.01, 90.08, 90.08, 139.83, 146.66, 45.37, 90.08, 90.08, 90.08, 68.37, 122.12, 90.08, 73.27, 136.83, 173.33, 99.97, 90.08, 90.08, 33.01, 19.8, 77.76, 53.77, 139.97, 99.7, 115.37, 90.08, 90.08, 77.76, 129.4, 90.08, 90.08, 90.08, 75.96, 122.12, 107.69, 33.01, 77.68, 71.3, 99.97, 136.83, 99.92, 33.01, 118.17, 90.08, 59.81, 90.08, 26.26, 41.12, 38.39, 99.87, 90.08, 90.08, 99.87, 139.83, 99.96, 90.08, 90.08, 33.01, 76.42, 128.55, 111.76, 99.9, 90.08, 73.27, 73.27, 90.08, 90.08, 99.7, 78.94, 55.45, 53.77, 99.96, 90.08, 90.08, 90.08, 90.08, 81.8, 90.08, 55.45, 64.65, 59.96, 90.08, 122.2, 57.85, 81.73, 77.68, 99.7, 63.55, 136.29, 99.98, 77.76, 77.76, 99.82, 99.97, 33.01, 59.94, 33.01, 166.57, 90.08, 90.08, 90.08, 128.55, 33.01, 33.01, 81.73, 59.81, 33.01, 90.08, 90.08, 90.08, 59.81, 139.97, 71.3, 33.23, 75.96, 166.65, 90.08, 139.83, 88.18, 131.53, 90.08, 128.55, 122.12, 90.08, 73.27, 144.44, 55.53, 33.01, 53.77, 99.98, 90.08, 90.08, 139.97, 59.81], "Democrats": [90.08, 69.16, 90.08, 90.08, 99.7, 63.55, 99.7, 99.87, 90.08, 90.08, 90.08, 69.16, 99.92, 272.07, 99.7, 166.39, 122.12, 99.7, 45.37, 59.81, 84.54, 81.73, 90.08, 33.01, 90.08, 157.02, 90.08, 81.73, 90.08, 33.01, 99.87, 166.39, 99.7, 99.7, 77.68, 55.45, 63.55, 90.08, 68.37, 75.96, 99.7, 71.3, 99.7, 86.61, 90.08, 272.07, 99.82, 59.94, 99.82, 99.92, 76.42, 99.7, 99.82, 84.54, 51.96, 90.08, 27.18, 90.08, 71.3, 68.37, 59.81, 90.08, 71.4, 55.45, 53.83, 33.01, 166.39, 130.7, 43.96, 38.39, 59.96, 90.08, 90.08, 43.96, 59.81, 64.65, 38.39, 42.83, 34.53, 38.39, 63.62, 59.94, 33.01, 99.7, 77.76, 99.82, 81.8, 59.81, 59.81, 42.2, 90.08, 42.83, 90.08, 90.08, 71.4, 19.8, 90.08, 55.45, 33.01, 90.08, 42.72, 84.61, 59.08, 111.71, 71.3, 53.77, 81.8, 59.81, 48.54, 58.46, 55.45, 99.97, 99.96, 52.93, 42.72, 67.96, 90.08, 90.08, 111.71, 90.08, 90.08, 55.53, 90.08, 90.08, 90.08, 90.08, 33.27, 31.4, 90.08, 45.44, 90.08, 77.76, 42.2, 90.08, 71.4, 90.08, 90.08, 71.4, 90.08, 90.08, 55.53, 33.01, 55.53, 67.96, 63.55, 90.08, 53.83, 90.08, 90.08, 38.45, 179.97, 90.08, 90.08, 90.08, 59.81, 63.62, 90.08, 57.88, 33.01, 71.4, 90.08, 90.08, 31.81, 99.82, 77.76, 49.99, 272.07, 69.22, 99.98, 49.99, 64.7, 90.08, 90.08, 33.01, 90.08, 52.3, 90.08, 90.08, 84.54, 122.2, 49.99, 27.18, 57.69, 90.08, 90.08, 89.47, 90.08, 99.7, 99.99, 89.47, 73.33, 57.89, 66.66, 54.54, 54.26, 90.08, 61.81, 90.08, 57.89, 50.66, 99.7, 73.32, 100.0, 8.54, 8.82, 5.82, 19.8, 8.17, 8.54, 9.32, 45.37, 33.84, 55.55, 76.92, 90.08, 63.62, 107.69, 111.76, 90.08, 115.38, 68.42, 42.3, 73.33, 35.96, 46.67, 52.89, 78.95, 63.55, 100.0, 41.18, 90.08, 42.72, 36.84, 130.76, 112.5, 7.73, 5.21, 33.01, 6.92, 7.36, 33.01, 8.22], "Abdul El-Sayed": [38.45, 56.66, 33.33, 33.32, 19.99, 14.65, 16.91, 27.18, 15.55, 17.33, 68.37, 17.5, 19.98, 43.33, 42.22, 71.4, 55.53, 23.0, 33.32, 63.62, 16.66, 27.27, 59.94, 38.45, 17.59, 46.67, 46.67, 31.82, 69.23, 27.96, 20.59, 27.96, 59.81, 34.61, 53.77, 17.5, 63.63, 86.61, 67.96, 59.96, 16.66, 23.07, 21.11, 19.98, 19.22, 22.5, 27.18, 26.46, 27.27, 26.92, 36.66, 30.91, 73.32, 14.14, 16.66, 55.53, 25.69, 18.89, 42.2, 16.91, 13.84, 20.0, 9.0, 31.4, 29.4, 19.8, 42.3, 33.01, 34.61, 19.8, 19.8, 11.99]}, "targeting": {"Ground News": {"states": [{"state": "California", "value": 96671.918039, "per_capita": 2456.979142168103}, {"state": "Texas", "value": 57367.440425, "per_capita": 1787.0884412117928}, {"state": "Florida", "value": 46586.844863, "per_capita": 1969.0796308057438}, {"state": "New York", "value": 39346.833877, "per_capita": 1967.003860936884}, {"state": "Washington", "value": 31954.8875405, "per_capita": 3957.711544234998}, {"state": "Colorado", "value": 26056.0987225, "per_capita": 4316.339064327389}, {"state": "Pennsylvania", "value": 25475.0196635, "per_capita": 1948.6719563029678}, {"state": "North Carolina", "value": 25247.0955425, "per_capita": 2225.6147517933687}, {"state": "Illinois", "value": 24319.800111, "per_capita": 1909.6446493507901}, {"state": "Michigan", "value": 23292.0209415, "per_capita": 2293.468479163544}, {"state": "Virginia", "value": 23163.8592225, "per_capita": 2590.8699379077757}, {"state": "Ohio", "value": 21404.2771405, "per_capita": 1792.5931236049983}, {"state": "Massachusetts", "value": 20957.4703865, "per_capita": 2923.098499457711}, {"state": "Georgia", "value": 19629.5298555, "per_capita": 1721.6940625918758}, {"state": "Arizona", "value": 19603.9155655, "per_capita": 2548.872084854767}, {"state": "Oregon", "value": 18733.9271735, "per_capita": 4375.196684585721}, {"state": "New Jersey", "value": 18533.598994, "per_capita": 1932.5810341857564}, {"state": "Minnesota", "value": 16744.5534495, "per_capita": 2855.77295948344}, {"state": "Maryland", "value": 14953.265141, "per_capita": 2379.0550676331422}, {"state": "Tennessee", "value": 14843.2891945, "per_capita": 2011.5962605204243}, {"state": "Missouri", "value": 14089.086733, "per_capita": 2237.2372716131285}, {"state": "Wisconsin", "value": 14038.331288, "per_capita": 2344.2517571453905}, {"state": "Indiana", "value": 12920.807752499999, "per_capita": 1842.6939403261192}, {"state": "South Carolina", "value": 11617.775109, "per_capita": 2056.1589522341737}, {"state": "Utah", "value": 11276.8661565, "per_capita": 3154.5225728532164}, {"state": "Connecticut", "value": 10489.9020255, "per_capita": 2833.161431345969}, {"state": "Oklahoma", "value": 7914.9071859999995, "per_capita": 1907.7499147950089}, {"state": "Alabama", "value": 7646.1131445, "per_capita": 1463.8973794595224}, {"state": "Idaho", "value": 7396.338406, "per_capita": 3592.9077836620527}, {"state": "Kentucky", "value": 7054.066232, "per_capita": 1523.661070457971}, {"state": "Kansas", "value": 7012.5848909999995, "per_capita": 2345.9832205267785}, {"state": "Nevada", "value": 6831.738375, "per_capita": 2063.4500063881205}, {"state": "Maine", "value": 6617.620175, "per_capita": 4656.000573414667}, {"state": "Iowa", "value": 6387.353305, "per_capita": 1967.56737012987}, {"state": "Louisiana", "value": 6074.810654, "per_capita": 1314.467305853078}, {"state": "New Mexico", "value": 6042.597328, "per_capita": 2844.616677541236}, {"state": "New Hampshire", "value": 5692.6646125, "per_capita": 4002.8130418671235}, {"state": "Arkansas", "value": 5143.307227, "per_capita": 1641.392674075204}, {"state": "Montana", "value": 5138.158082, "per_capita": 4460.861082919282}, {"state": "Nebraska", "value": 4395.374165, "per_capita": 2164.760000512209}, {"state": "Hawaii", "value": 4325.4382375000005, "per_capita": 3023.3274043676893}, {"state": "Alaska", "value": 3852.8179535, "per_capita": 5220.599311249412}, {"state": "Vermont", "value": 3170.117099, "per_capita": 4931.69328023273}, {"state": "Rhode Island", "value": 3044.996464, "per_capita": 2722.0838259759507}, {"state": "Mississippi", "value": 2992.253515, "per_capita": 1011.529347077969}, {"state": "West Virginia", "value": 2689.8864765, "per_capita": 1524.1082607321014}, {"state": "Delaware", "value": 2636.2447375, "per_capita": 2464.284500752958}, {"state": "Washington, District of Columbia", "value": 2327.9164735, "per_capita": 3344.803691916434}, {"state": "Wyoming", "value": 2218.4591495, "per_capita": 3755.1104117579353}, {"state": "South Dakota", "value": 2093.370212, "per_capita": 2219.721181068798}, {"state": "North Dakota", "value": 1555.266706, "per_capita": 1931.2190496058136}, {"state": "Unknown", "value": 96.243684, "per_capita": null}], "demographics": [{"age": "18-24", "gender": "female", "est_impressions": 176174.301732}, {"age": "18-24", "gender": "male", "est_impressions": 708380.657436}, {"age": "18-24", "gender": "unknown", "est_impressions": 19996.9376185}, {"age": "25-34", "gender": "female", "est_impressions": 502087.1202275}, {"age": "25-34", "gender": "male", "est_impressions": 1381104.392055}, {"age": "25-34", "gender": "unknown", "est_impressions": 27341.551496}, {"age": "35-44", "gender": "female", "est_impressions": 730158.897282}, {"age": "35-44", "gender": "male", "est_impressions": 1364798.674767}, {"age": "35-44", "gender": "unknown", "est_impressions": 24263.6392745}, {"age": "45-54", "gender": "female", "est_impressions": 837224.4763995}, {"age": "45-54", "gender": "male", "est_impressions": 1270748.688798}, {"age": "45-54", "gender": "unknown", "est_impressions": 21477.096776500002}, {"age": "55-64", "gender": "female", "est_impressions": 1180927.987764}, {"age": "55-64", "gender": "male", "est_impressions": 1439975.010617}, {"age": "55-64", "gender": "unknown", "est_impressions": 24505.6041075}, {"age": "65+", "gender": "female", "est_impressions": 1747882.9233424999}, {"age": "65+", "gender": "male", "est_impressions": 1843873.305917}, {"age": "65+", "gender": "unknown", "est_impressions": 42301.0163185}, {"age": "Unknown", "gender": "female", "est_impressions": 141.1636865}, {"age": "Unknown", "gender": "male", "est_impressions": 153.6044865}, {"age": "Unknown", "gender": "unknown", "est_impressions": 2.08747}]}, "Democrats": {"states": [{"state": "California", "value": 110726.3633305, "per_capita": 2814.1819331795245}, {"state": "New York", "value": 49458.2041655, "per_capita": 2472.4855588802625}, {"state": "Florida", "value": 37283.5756385, "per_capita": 1575.859656717865}, {"state": "Washington", "value": 33924.8353625, "per_capita": 4201.695668002876}, {"state": "Pennsylvania", "value": 30644.6760715, "per_capita": 2344.116772403552}, {"state": "Massachusetts", "value": 30401.3630645, "per_capita": 4240.310357902413}, {"state": "Illinois", "value": 27814.602515, "per_capita": 2184.064286061466}, {"state": "Arizona", "value": 25889.750835, "per_capita": 3366.147082540437}, {"state": "Michigan", "value": 23774.5417215, "per_capita": 2340.9802945723854}, {"state": "Virginia", "value": 23545.915442999998, "per_capita": 2633.6027989036943}, {"state": "New Jersey", "value": 22203.9465675, "per_capita": 2315.304546856563}, {"state": "Maryland", "value": 20027.641999, "per_capita": 3186.3852303281583}, {"state": "Colorado", "value": 19651.532666, "per_capita": 3255.386733967021}, {"state": "Oregon", "value": 18034.837719, "per_capita": 4211.928522217509}, {"state": "Minnesota", "value": 17179.615989500002, "per_capita": 2929.9725994537307}, {"state": "Texas", "value": 15423.0594095, "per_capita": 480.45321518003266}, {"state": "Wisconsin", "value": 14014.569272, "per_capita": 2340.28375363995}, {"state": "North Carolina", "value": 13861.9538075, "per_capita": 1221.9769529812343}, {"state": "Connecticut", "value": 12912.340811, "per_capita": 3487.4249430729096}, {"state": "Missouri", "value": 11538.6777855, "per_capita": 1832.252188950666}, {"state": "Indiana", "value": 10027.8147635, "per_capita": 1430.11132534179}, {"state": "Tennessee", "value": 9683.420466, "per_capita": 1312.319132451472}, {"state": "Ohio", "value": 9617.8748815, "per_capita": 805.4902421183748}, {"state": "South Carolina", "value": 7670.857256, "per_capita": 1357.6181041769612}, {"state": "Maine", "value": 7336.500932, "per_capita": 5161.788020910287}, {"state": "Georgia", "value": 6722.142009, "per_capita": 589.5949658494725}, {"state": "New Mexico", "value": 6475.793417, "per_capita": 3048.548323574466}, {"state": "Iowa", "value": 6362.1471285, "per_capita": 1959.8028316678574}, {"state": "Kentucky", "value": 5907.180525, "per_capita": 1275.936560005633}, {"state": "New Hampshire", "value": 5767.242624500001, "per_capita": 4055.252779563005}, {"state": "Kansas", "value": 5243.356978, "per_capita": 1754.107462628647}, {"state": "Nevada", "value": 4703.101424, "per_capita": 1420.519072994621}, {"state": "Delaware", "value": 4617.772215, "per_capita": 4316.5584498135595}, {"state": "Utah", "value": 4403.322467, "per_capita": 1231.7588880574574}, {"state": "Oklahoma", "value": 4148.16775, "per_capita": 999.8432686128915}, {"state": "Alabama", "value": 4034.8284755, "per_capita": 772.4937782410171}, {"state": "Washington, District of Columbia", "value": 3776.2862265, "per_capita": 5425.8545166527765}, {"state": "Vermont", "value": 3759.005917, "per_capita": 5847.816860478683}, {"state": "Idaho", "value": 3718.3592865, "per_capita": 1806.2615972357835}, {"state": "Rhode Island", "value": 3461.1084069999997, "per_capita": 3094.068359694518}, {"state": "Hawaii", "value": 3423.6945450000003, "per_capita": 2393.0406524693017}, {"state": "Arkansas", "value": 3164.3671565, "per_capita": 1009.8500516355184}, {"state": "Louisiana", "value": 3107.001208, "per_capita": 672.2928070972629}, {"state": "Nebraska", "value": 2952.3260455, "per_capita": 1454.0462522304488}, {"state": "Montana", "value": 2884.4115985, "per_capita": 2504.196881747409}, {"state": "West Virginia", "value": 2233.1597110000002, "per_capita": 1265.3237200916546}, {"state": "South Dakota", "value": 1417.312133, "per_capita": 1502.857804974774}, {"state": "Mississippi", "value": 1307.001861, "per_capita": 441.8311257584137}, {"state": "Alaska", "value": 1227.815013, "per_capita": 1663.6992166698508}, {"state": "Wyoming", "value": 1086.996453, "per_capita": 1839.9219562479689}, {"state": "North Dakota", "value": 950.4623805, "per_capita": 1180.2162600626575}, {"state": "Unknown", "value": 75.6156545, "per_capita": null}], "demographics": [{"age": "18-24", "gender": "female", "est_impressions": 415541.198451}, {"age": "18-24", "gender": "male", "est_impressions": 398291.19433699996}, {"age": "18-24", "gender": "unknown", "est_impressions": 25796.369924}, {"age": "25-34", "gender": "female", "est_impressions": 257844.49537350002}, {"age": "25-34", "gender": "male", "est_impressions": 302564.4198095}, {"age": "25-34", "gender": "unknown", "est_impressions": 15598.520739}, {"age": "35-44", "gender": "female", "est_impressions": 133670.7770905}, {"age": "35-44", "gender": "male", "est_impressions": 179953.2144685}, {"age": "35-44", "gender": "unknown", "est_impressions": 5508.9926735}, {"age": "45-54", "gender": "female", "est_impressions": 274930.1968875}, {"age": "45-54", "gender": "male", "est_impressions": 307348.609422}, {"age": "45-54", "gender": "unknown", "est_impressions": 8554.3593905}, {"age": "55-64", "gender": "female", "est_impressions": 879895.262474}, {"age": "55-64", "gender": "male", "est_impressions": 781184.7094385}, {"age": "55-64", "gender": "unknown", "est_impressions": 20786.8327095}, {"age": "65+", "gender": "female", "est_impressions": 3809668.602469}, {"age": "65+", "gender": "male", "est_impressions": 2797790.660191}, {"age": "65+", "gender": "unknown", "est_impressions": 83268.604701}, {"age": "Unknown", "gender": "female", "est_impressions": 2450.418984}, {"age": "Unknown", "gender": "male", "est_impressions": 2268.598474}, {"age": "Unknown", "gender": "unknown", "est_impressions": 65.6148245}]}, "Abdul El-Sayed": {"states": [{"state": "Michigan", "value": 59218.682617, "per_capita": 5831.017510279341}, {"state": "California", "value": 37966.759828, "per_capita": 964.9496863760249}, {"state": "New York", "value": 28336.0329915, "per_capita": 1416.5583556774125}, {"state": "Illinois", "value": 14999.9665445, "per_capita": 1177.8306450466732}, {"state": "Texas", "value": 14935.4927445, "per_capita": 465.26472594490946}, {"state": "Florida", "value": 10799.4792815, "per_capita": 456.46007449195866}, {"state": "Washington", "value": 9548.539036, "per_capita": 1182.6160591383639}, {"state": "New Jersey", "value": 9214.8281395, "per_capita": 960.8712318338248}, {"state": "Massachusetts", "value": 8857.5658935, "per_capita": 1235.4323825654064}, {"state": "Pennsylvania", "value": 8657.4588135, "per_capita": 662.2388294713323}, {"state": "Virginia", "value": 7668.722634, "per_capita": 857.7440720795045}, {"state": "Ohio", "value": 7207.765889, "per_capita": 603.6453127738864}, {"state": "Maryland", "value": 6167.567365, "per_capita": 981.2560839599198}, {"state": "Georgia", "value": 5385.342529, "per_capita": 472.3451007465121}, {"state": "Minnesota", "value": 5300.6517045, "per_capita": 904.0227827516605}, {"state": "North Carolina", "value": 5095.9525935, "per_capita": 449.22503055613714}, {"state": "Colorado", "value": 4821.530727, "per_capita": 798.7136389237686}, {"state": "Oregon", "value": 4530.571167, "per_capita": 1058.087808581715}, {"state": "Wisconsin", "value": 4067.906002, "per_capita": 679.2969618292414}, {"state": "Indiana", "value": 3739.0188205, "per_capita": 533.2381268475702}, {"state": "Arizona", "value": 3712.6812105, "per_capita": 482.7173156194368}, {"state": "Connecticut", "value": 3374.859549, "per_capita": 911.4977325043895}, {"state": "Missouri", "value": 3000.997091, "per_capita": 476.53497144439626}, {"state": "Tennessee", "value": 2899.8884005, "per_capita": 392.9994616377785}, {"state": "Washington, District of Columbia", "value": 2393.7487595, "per_capita": 3439.393027816891}, {"state": "Maine", "value": 2029.6360295, "per_capita": 1428.0037637813002}, {"state": "Kentucky", "value": 1695.151001, "per_capita": 366.1484743444582}, {"state": "South Carolina", "value": 1599.5881875, "per_capita": 283.1013288480898}, {"state": "Iowa", "value": 1535.745483, "per_capita": 473.07273558983707}, {"state": "New Mexico", "value": 1463.556904, "per_capita": 688.9849102400785}, {"state": "Nevada", "value": 1396.507941, "per_capita": 421.7995715881774}, {"state": "Utah", "value": 1370.2676185, "per_capita": 383.31040498485936}, {"state": "Kansas", "value": 1186.4693935, "per_capita": 396.9202985894497}, {"state": "Louisiana", "value": 1134.5105435, "per_capita": 245.48534967002058}, {"state": "New Hampshire", "value": 1115.188087, "per_capita": 784.1476220075574}, {"state": "Alabama", "value": 1098.826643, "per_capita": 210.37740519509313}, {"state": "Vermont", "value": 1032.3295945, "per_capita": 1605.976298410871}, {"state": "Oklahoma", "value": 1011.4085625, "per_capita": 243.78234053650945}, {"state": "Rhode Island", "value": 975.6927705, "per_capita": 872.2235119481293}, {"state": "Hawaii", "value": 882.7144935, "per_capita": 616.9860189643025}, {"state": "Delaware", "value": 880.274213, "per_capita": 822.8545964080499}, {"state": "Nebraska", "value": 755.186564, "per_capita": 371.93595022904117}, {"state": "Idaho", "value": 728.6484795, "per_capita": 353.9544366203341}, {"state": "Arkansas", "value": 712.791795, "per_capita": 227.4744981812681}, {"state": "Alaska", "value": 605.7298565, "per_capita": 820.7688268204871}, {"state": "West Virginia", "value": 578.795086, "per_capita": 327.9492943477561}, {"state": "Montana", "value": 534.7169415, "per_capita": 464.2321152148188}, {"state": "Mississippi", "value": 370.1336385, "per_capita": 125.12343483152296}, {"state": "South Dakota", "value": 273.7615675, "per_capita": 290.2851805471022}, {"state": "North Dakota", "value": 227.3772625, "per_capita": 282.3408352362823}, {"state": "Wyoming", "value": 192.849073, "per_capita": 326.429072215903}, {"state": "Unknown", "value": 23.889046, "per_capita": null}], "demographics": [{"age": "18-24", "gender": "female", "est_impressions": 247462.733678}, {"age": "18-24", "gender": "male", "est_impressions": 612284.882003}, {"age": "18-24", "gender": "unknown", "est_impressions": 23815.8926805}, {"age": "25-34", "gender": "female", "est_impressions": 727631.3950015}, {"age": "25-34", "gender": "male", "est_impressions": 1501476.1132750001}, {"age": "25-34", "gender": "unknown", "est_impressions": 42299.142531}, {"age": "35-44", "gender": "female", "est_impressions": 786393.798276}, {"age": "35-44", "gender": "male", "est_impressions": 1345350.430553}, {"age": "35-44", "gender": "unknown", "est_impressions": 33739.9895725}, {"age": "45-54", "gender": "female", "est_impressions": 657686.7673055}, {"age": "45-54", "gender": "male", "est_impressions": 874152.0521025}, {"age": "45-54", "gender": "unknown", "est_impressions": 23117.08123}, {"age": "55-64", "gender": "female", "est_impressions": 751746.290893}, {"age": "55-64", "gender": "male", "est_impressions": 743226.8577865}, {"age": "55-64", "gender": "unknown", "est_impressions": 20474.724886}, {"age": "65+", "gender": "female", "est_impressions": 1116234.5159575}, {"age": "65+", "gender": "male", "est_impressions": 798886.236178}, {"age": "65+", "gender": "unknown", "est_impressions": 28508.5781365}, {"age": "Unknown", "gender": "female", "est_impressions": 187.642081}, {"age": "Unknown", "gender": "male", "est_impressions": 292.0468705}, {"age": "Unknown", "gender": "unknown", "est_impressions": 1.0}]}}, "timing": {"Ground News": {"daily": [{"date": "2026-07-20", "n_ads": 231, "spend": 337484.5, "imp": 3130034.5}, {"date": "2026-07-25", "n_ads": 30, "spend": 53485.0, "imp": 1314485.0}, {"date": "2026-07-27", "n_ads": 87, "spend": 167806.5, "imp": 2027056.5}, {"date": "2026-07-28", "n_ads": 19, "spend": 6840.5, "imp": 197090.5}, {"date": "2026-07-29", "n_ads": 89, "spend": 189105.5, "imp": 6166956.0}, {"date": "2026-07-30", "n_ads": 9, "spend": 6845.5, "imp": 194745.5}, {"date": "2026-08-04", "n_ads": 55, "spend": 10222.5, "imp": 172672.5}, {"date": "2026-08-05", "n_ads": 29, "spend": 6035.5, "imp": 81485.5}, {"date": "2026-08-06", "n_ads": 13, "spend": 1843.5, "imp": 58993.5}], "n_active_days": 9, "busiest_day_share": 0.4328561222775306}, "Democrats": {"daily": [{"date": "2026-04-28", "n_ads": 7, "spend": 5546.5, "imp": 717496.5}, {"date": "2026-06-03", "n_ads": 6, "spend": 151947.0, "imp": 1936547.5}, {"date": "2026-06-04", "n_ads": 1, "spend": 27499.5, "imp": 274999.5}, {"date": "2026-06-08", "n_ads": 8, "spend": 166996.0, "imp": 2441496.0}, {"date": "2026-06-12", "n_ads": 1, "spend": 7499.5, "imp": 64999.5}, {"date": "2026-06-17", "n_ads": 3, "spend": 65048.5, "imp": 588048.5}, {"date": "2026-06-23", "n_ads": 3, "spend": 14298.5, "imp": 190548.5}, {"date": "2026-06-26", "n_ads": 3, "spend": 18248.5, "imp": 392998.5}, {"date": "2026-07-02", "n_ads": 7, "spend": 4946.5, "imp": 563496.5}, {"date": "2026-07-17", "n_ads": 2, "spend": 35249.0, "imp": 362499.0}, {"date": "2026-07-22", "n_ads": 2, "spend": 9649.0, "imp": 188999.0}, {"date": "2026-07-24", "n_ads": 2, "spend": 5549.0, "imp": 95549.0}, {"date": "2026-07-26", "n_ads": 5, "spend": 24497.5, "imp": 405547.5}, {"date": "2026-07-27", "n_ads": 7, "spend": 31446.5, "imp": 394546.5}, {"date": "2026-07-29", "n_ads": 3, "spend": 3848.5, "imp": 66098.5}, {"date": "2026-07-30", "n_ads": 8, "spend": 15346.0, "imp": 263646.0}, {"date": "2026-07-31", "n_ads": 5, "spend": 8897.5, "imp": 152597.5}, {"date": "2026-08-01", "n_ads": 4, "spend": 7398.0, "imp": 110548.0}, {"date": "2026-08-02", "n_ads": 2, "spend": 1999.0, "imp": 24999.0}, {"date": "2026-08-03", "n_ads": 13, "spend": 10243.5, "imp": 167293.5}, {"date": "2026-08-04", "n_ads": 9, "spend": 5645.5, "imp": 108645.5}, {"date": "2026-08-05", "n_ads": 42, "spend": 41179.0, "imp": 639779.0}, {"date": "2026-08-06", "n_ads": 45, "spend": 21927.5, "imp": 376927.5}, {"date": "2026-08-07", "n_ads": 54, "spend": 14673.0, "imp": 174673.0}], "n_active_days": 24, "busiest_day_share": 0.23870928086749316}, "Abdul El-Sayed": {"daily": [{"date": "2026-07-24", "n_ads": 14, "spend": 13993.0, "imp": 596993.0}, {"date": "2026-07-29", "n_ads": 12, "spend": 27394.0, "imp": 1036494.0}, {"date": "2026-08-05", "n_ads": 46, "spend": 255927.0, "imp": 8701478.5}], "n_active_days": 3, "busiest_day_share": 0.8607970024956779}}, "unified_timeline": {"dates": ["2026-04-28", "2026-06-03", "2026-06-04", "2026-06-08", "2026-06-12", "2026-06-17", "2026-06-23", "2026-06-26", "2026-07-02", "2026-07-17", "2026-07-20", "2026-07-22", "2026-07-24", "2026-07-25", "2026-07-26", "2026-07-27", "2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-01", "2026-08-02", "2026-08-03", "2026-08-04", "2026-08-05", "2026-08-06", "2026-08-07"], "Ground News": {"spend": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 337484.5, 0, 0, 53485.0, 0, 167806.5, 6840.5, 189105.5, 6845.5, 0, 0, 0, 0, 10222.5, 6035.5, 1843.5, 0], "imp": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3130034.5, 0, 0, 1314485.0, 0, 2027056.5, 197090.5, 6166956.0, 194745.5, 0, 0, 0, 0, 172672.5, 81485.5, 58993.5, 0]}, "Democrats": {"spend": [5546.5, 151947.0, 27499.5, 166996.0, 7499.5, 65048.5, 14298.5, 18248.5, 4946.5, 35249.0, 0, 9649.0, 5549.0, 0, 24497.5, 31446.5, 0, 3848.5, 15346.0, 8897.5, 7398.0, 1999.0, 10243.5, 5645.5, 41179.0, 21927.5, 14673.0], "imp": [717496.5, 1936547.5, 274999.5, 2441496.0, 64999.5, 588048.5, 190548.5, 392998.5, 563496.5, 362499.0, 0, 188999.0, 95549.0, 0, 405547.5, 394546.5, 0, 66098.5, 263646.0, 152597.5, 110548.0, 24999.0, 167293.5, 108645.5, 639779.0, 376927.5, 174673.0]}, "Abdul El-Sayed": {"spend": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13993.0, 0, 0, 0, 0, 27394.0, 0, 0, 0, 0, 0, 0, 255927.0, 0, 0], "imp": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 596993.0, 0, 0, 0, 0, 1036494.0, 0, 0, 0, 0, 0, 0, 8701478.5, 0, 0]}}}</script>
+
+<script>
+const DATA = JSON.parse(document.getElementById('story-data').textContent);
+let highlightedAdvertiser = null;
+let mapMetric = 'raw';
+let selectedState = null;
+let playTimer = null;
+let playIndex = 0;
+
+const ADV_NAMES = DATA.advertisers_summary.map(a => a.name);
+const ADV_COLOR = {}; DATA.advertisers_summary.forEach(a => ADV_COLOR[a.name] = a.color);
+
+// ---------------- Tooltip helpers ----------------
+const tooltipEl = document.getElementById('tooltip');
+function showTooltip(html, event) {
+  tooltipEl.innerHTML = html;
+  tooltipEl.style.opacity = '1';
+  moveTooltip(event);
+}
+function moveTooltip(event) {
+  const pad = 14;
+  let x = event.clientX + pad, y = event.clientY + pad;
+  if (x + 240 > window.innerWidth) x = event.clientX - 240 - pad;
+  if (y + 60 > window.innerHeight) y = event.clientY - 60 - pad;
+  tooltipEl.style.left = x + 'px';
+  tooltipEl.style.top = y + 'px';
+}
+function hideTooltip() { tooltipEl.style.opacity = '0'; }
+
+// ---------------- Cross-filter (still works via chart legends and click-to-isolate) ----------------
+
+function setHighlight(name) {
+  highlightedAdvertiser = (highlightedAdvertiser === name) ? null : name;
+  document.querySelectorAll('.fb-chip').forEach(chip => {
+    chip.classList.toggle('active-chip', chip.dataset.adv === highlightedAdvertiser);
+  });
+  document.querySelectorAll('[data-adv]').forEach(el => {
+    if (el.classList.contains('fb-chip')) return;
+    const belongs = el.dataset.adv === highlightedAdvertiser;
+    el.classList.toggle('dimmed', highlightedAdvertiser !== null && !belongs);
+  });
+}
+
+// ---------------- Scroll reveal ----------------
+function initScrollReveal() {
+  const sections = document.querySelectorAll('section.scene');
+  if (!('IntersectionObserver' in window)) return;
+  sections.forEach(s => s.classList.add('reveal-init'));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('is-visible'); });
+  }, { threshold: 0.1 });
+  sections.forEach(s => io.observe(s));
+}
+
+// ---------------- Charts ----------------
+function renderAll() {
+  renderCalculator();
+  renderSlopegraph();
+  renderMap();
+  renderAgeGenderPyramid();
+}
+
+function renderBenchmark() {
+  const el = document.getElementById('chart-benchmark');
+  const width = el.clientWidth || 900, height = 260;
+  const margin = {top: 10, right: 20, bottom: 34, left: 48};
+  const svg = d3.select(el).append('svg').attr('width', width).attr('height', height);
+  const hist = DATA.spend_benchmark.histogram;
+  const edges = hist.edges, counts = hist.counts;
+  const x = d3.scaleLog().domain([edges[0], edges[edges.length-1]]).range([margin.left, width-margin.right]);
+  const y = d3.scaleLinear().domain([0, d3.max(counts)]).nice().range([height-margin.bottom, margin.top]);
+
+  svg.append('g').attr('transform', `translate(${margin.left},0)`).attr('class','axis')
+    .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format('~s')))
+    .call(g => g.selectAll('.tick line').clone().attr('x2', width - margin.left - margin.right).attr('stroke-opacity', 0.08))
+    .call(g => g.select('.domain').remove());
+
+  svg.append('text').attr('x', margin.left).attr('y', margin.top - 2).attr('fill', 'var(--ink-soft)')
+    .attr('font-family', "'IBM Plex Mono', monospace").attr('font-size', 10).text('ADVERTISERS');
+
+  svg.selectAll('rect.bar').data(counts).enter().append('rect')
+    .attr('class', 'bar')
+    .attr('x', (d,i) => x(edges[i]))
+    .attr('width', (d,i) => Math.max(1, x(edges[i+1]) - x(edges[i]) - 1))
+    .attr('y', d => y(d)).attr('height', d => y(0) - y(d))
+    .attr('fill', 'var(--green)').attr('opacity', 0.85)
+    .on('mousemove', function(event, d) {
+      const i = counts.indexOf(d);
+      d3.select(this).attr('opacity', 1);
+      showTooltip(`<b>${d}</b> advertisers spent between<br>$${d3.format(",.0f")(edges[i])} and $${d3.format(",.0f")(edges[i+1])}`, event);
+    })
+    .on('mouseleave', function() { d3.select(this).attr('opacity', 0.85); hideTooltip(); });
+
+  svg.append('g').attr('transform', `translate(0,${height-margin.bottom})`).attr('class','axis')
+    .call(d3.axisBottom(x).ticks(6, "~s").tickFormat(d => "$"+d3.format("~s")(d)));
+
+  if (userBudget !== null && !isNaN(userBudget) && userBudget > 0) {
+    const bx = x(Math.max(userBudget, edges[0]));
+    svg.append('line').attr('x1', bx).attr('x2', bx).attr('y1', margin.top).attr('y2', height-margin.bottom)
+      .attr('stroke', 'var(--brass)').attr('stroke-width', 2).attr('stroke-dasharray', '5 3');
+    svg.append('text').attr('x', bx).attr('y', margin.top+2).attr('fill', 'var(--brass)')
+      .attr('font-family', 'IBM Plex Mono, monospace').attr('font-size', 11).attr('font-weight', 600)
+      .attr('text-anchor', bx > width - 90 ? 'end' : 'start').text('YOUR BUDGET');
+  }
+}
+
+// ---- Spend calculator ----
+function budgetFromSlider(v) {
+  // log scale slider: 0-1000 maps to $1 - $50,000
+  const minLog = Math.log10(1), maxLog = Math.log10(50000);
+  return Math.round(Math.pow(10, minLog + (v/1000)*(maxLog-minLog)));
+}
+function renderCalculator() {
+  const slider = document.getElementById('calc-slider');
+  const display = document.getElementById('calc-amount-display');
+  const label = document.getElementById('calc-amount-label');
+  const resultsEl = document.getElementById('calc-results');
+
+  DATA.advertisers_summary.forEach(a => {
+    const card = document.createElement('div');
+    card.className = 'calc-result';
+    card.dataset.adv = a.name;
+    card.style.cursor = 'pointer';
+    card.innerHTML = `
+      <div class="cr-name" style="color:${a.color}">${a.name}</div>
+      <div class="cr-num" id="calc-num-${a.name.replace(/\s+/g,'-')}">0</div>
+      <div class="cr-sub">est. impressions</div>`;
+    card.addEventListener('click', () => setHighlight(a.name));
+    if (highlightedAdvertiser) card.classList.toggle('dimmed', a.name !== highlightedAdvertiser);
+    resultsEl.appendChild(card);
+  });
+
+  function update(v) {
+    const amt = budgetFromSlider(v);
+    display.textContent = '$' + d3.format(",.0f")(amt);
+    label.textContent = '$' + d3.format(",.0f")(amt);
+    DATA.advertisers_summary.forEach(a => {
+      const num = amt * a.imp_per_dollar;
+      const elNum = document.getElementById('calc-num-'+a.name.replace(/\s+/g,'-'));
+      elNum.textContent = d3.format(",.0f")(num);
+    });
+  }
+  slider.addEventListener('input', () => update(+slider.value));
+  update(+slider.value);
+}
+
+function renderSlopegraph() {
+  const el = document.getElementById('chart-slope');
+  el.innerHTML = '';
+  const bySpend = DATA.advertisers_summary.slice().sort((a, b) => b.total_spend_peradfile - a.total_spend_peradfile);
+  const byValue = DATA.advertisers_summary.slice().sort((a, b) => b.imp_per_dollar - a.imp_per_dollar);
+  const width = el.clientWidth || 260;
+  const rowH = 62, topPad = 50;
+  const height = topPad + bySpend.length * rowH + 6;
+  const leftX = width * 0.3, rightX = width * 0.7;
+
+  const svg = d3.select(el).append('svg').attr('viewBox', `0 0 ${width} ${height}`).attr('width', '100%')
+    .attr('role', 'img').attr('aria-label', 'Slopegraph comparing ad spend rank to value (impressions per dollar) rank across three advertisers');
+
+  svg.append('text').attr('x', leftX).attr('y', 20).attr('text-anchor', 'middle')
+    .style('font-size', '11px').style('font-weight', '600').attr('fill', 'var(--ink-soft)').text('Spend rank');
+  svg.append('text').attr('x', rightX).attr('y', 20).attr('text-anchor', 'middle')
+    .style('font-size', '11px').style('font-weight', '600').attr('fill', 'var(--ink-soft)').text('Value rank');
+
+  const leftY = {}; bySpend.forEach((d, i) => leftY[d.name] = topPad + i * rowH);
+  const rightY = {}; byValue.forEach((d, i) => rightY[d.name] = topPad + i * rowH);
+
+  ADV_NAMES.forEach(name => {
+    const a = DATA.advertisers_summary.find(x => x.name === name);
+    const y1 = leftY[name], y2 = rightY[name];
+    const g = svg.append('g').attr('data-adv', name).style('cursor', 'pointer').on('click', () => setHighlight(name));
+    g.append('line').attr('x1', leftX + 14).attr('y1', y1).attr('x2', rightX - 14).attr('y2', y2)
+      .attr('stroke', ADV_COLOR[name]).attr('stroke-width', 2.5).attr('stroke-linecap', 'round');
+    g.append('circle').attr('cx', leftX).attr('cy', y1).attr('r', 5).attr('fill', ADV_COLOR[name]);
+    g.append('circle').attr('cx', rightX).attr('cy', y2).attr('r', 5).attr('fill', ADV_COLOR[name]);
+    g.append('text').attr('x', leftX).attr('y', y1 + 18).attr('text-anchor', 'middle')
+      .style('font-size', '10.5px').attr('fill', 'var(--ink)').text(name);
+    g.append('text').attr('x', leftX).attr('y', y1 + 31).attr('text-anchor', 'middle')
+      .attr('class', 'value-label').style('font-size', '10px').text('$' + d3.format('.2s')(a.total_spend_peradfile));
+    g.append('text').attr('x', rightX).attr('y', y2 + 18).attr('text-anchor', 'middle')
+      .attr('class', 'value-label').style('font-size', '10px').text(a.imp_per_dollar.toFixed(1) + '/$');
+    g.on('mousemove', (event) => showTooltip(`<b>${name}</b><br>Spend: $${d3.format(',.0f')(a.total_spend_peradfile)}<br>Value: ${a.imp_per_dollar.toFixed(2)} impressions per $`, event))
+      .on('mouseleave', hideTooltip);
+  });
+  if (highlightedAdvertiser) {
+    svg.selectAll('[data-adv]').classed('dimmed', function () { return this.getAttribute('data-adv') !== highlightedAdvertiser; });
+  }
+}
+
+// ---------------- Map ----------------
+
+let mapTopologyPromise = null;
+function loadMapTopology() {
+  if (window.US_STATE_TOPOLOGY) return Promise.resolve(window.US_STATE_TOPOLOGY);
+  if (!mapTopologyPromise) {
+    mapTopologyPromise = d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json')
+      .then(topology => {
+        window.US_STATE_TOPOLOGY = topology;
+        return topology;
+      })
+      .catch(error => {
+        console.error('Unable to load U.S. state map data:', error);
+        return null;
+      });
+  }
+  return mapTopologyPromise;
+}
+
+function renderMap() {
+  renderStateCompareBars();
+  const svg = d3.select('#us-map');
+  svg.selectAll('*').remove();
+  const topology = window.US_STATE_TOPOLOGY;
+  if (!topology) {
+    svg.append('text')
+      .attr('x', 300).attr('y', 190)
+      .attr('text-anchor', 'middle')
+      .attr('fill', 'var(--ink-soft)')
+      .attr('font-family', "'IBM Plex Mono', monospace")
+      .attr('font-size', 12)
+      .text('Loading U.S. state map…');
+    loadMapTopology().then(loaded => { if (loaded) renderMap(); });
+    return;
+  }
+  const namesByFips = {"01":"Alabama","02":"Alaska","04":"Arizona","05":"Arkansas","06":"California","08":"Colorado","09":"Connecticut","10":"Delaware","11":"District of Columbia","12":"Florida","13":"Georgia","15":"Hawaii","16":"Idaho","17":"Illinois","18":"Indiana","19":"Iowa","20":"Kansas","21":"Kentucky","22":"Louisiana","23":"Maine","24":"Maryland","25":"Massachusetts","26":"Michigan","27":"Minnesota","28":"Mississippi","29":"Missouri","30":"Montana","31":"Nebraska","32":"Nevada","33":"New Hampshire","34":"New Jersey","35":"New Mexico","36":"New York","37":"North Carolina","38":"North Dakota","39":"Ohio","40":"Oklahoma","41":"Oregon","42":"Pennsylvania","44":"Rhode Island","45":"South Carolina","46":"South Dakota","47":"Tennessee","48":"Texas","49":"Utah","50":"Vermont","51":"Virginia","53":"Washington","54":"West Virginia","55":"Wisconsin","56":"Wyoming"};
+  const states = topologyToFeatures(topology, topology.objects.states)
+    .map(d => ({...d, state: namesByFips[String(d.id).padStart(2, '0')]})).filter(d => d.state);
+  const width = 600, height = 430;
+  const projection = d3.geoAlbersUsa().fitSize([width, height], {type: 'FeatureCollection', features: states});
+  const path = d3.geoPath().projection(projection);
+  svg.attr('viewBox', `0 0 ${width} ${height}`).attr('height', height);
+  const defs = svg.append('defs');
+  const valuesFor = (name, state) => {
+    const row = DATA.targeting[name].states.find(d => normalizeStateName(d.state) === state);
+    return row ? (mapMetric === 'raw' ? row.value : row.per_capita) : 0;
+  };
+  const maxima = Object.fromEntries(ADV_NAMES.map(name => [name, d3.max(DATA.targeting[name].states, d => mapMetric === 'raw' ? d.value : d.per_capita) || 1]));
+  states.forEach(d => {
+    const gradient = defs.append('linearGradient').attr('id', `state-${d.id}`).attr('x1', '0%').attr('x2', '100%');
+    ADV_NAMES.forEach((name, i) => {
+      const color = d3.interpolateRgb('#EAE6D9', ADV_COLOR[name])(valuesFor(name, d.state) / maxima[name]);
+      gradient.append('stop').attr('offset', `${i * 33.333}%`).attr('stop-color', color);
+      gradient.append('stop').attr('offset', `${(i + 1) * 33.333}%`).attr('stop-color', color);
+    });
+  });
+  svg.selectAll('path.state').data(states).enter().append('path').attr('class', 'state')
+    .attr('data-state', d => d.state).attr('d', path).attr('fill', d => `url(#state-${d.id})`)
+    .classed('selected-state', d => d.state === selectedState)
+    .on('click', (event, d) => { selectedState = d.state; renderMap(); })
+    .on('mousemove', (event, d) => showTooltip(`<b>${d.state}</b><br>${ADV_NAMES.map(name => `${name}: ${formatStateValue(valuesFor(name, d.state))}`).join('<br>')}`, event))
+    .on('mouseleave', hideTooltip);
+  const key = document.getElementById('map-key');
+  key.innerHTML = '';
+  ADV_NAMES.forEach(name => {
+    const span = document.createElement('span');
+    span.style.setProperty('--key-color', ADV_COLOR[name]);
+    span.style.cursor = 'pointer';
+    span.dataset.adv = name;
+    span.textContent = name;
+    span.addEventListener('click', () => setHighlight(name));
+    if (highlightedAdvertiser) span.classList.toggle('dimmed', name !== highlightedAdvertiser);
+    key.appendChild(span);
+  });
+}
+
+// Small, local TopoJSON decoder: keeps the map self-contained when this HTML is opened from disk.
+function topologyToFeatures(topology, object) {
+  const transform = topology.transform || {scale: [1, 1], translate: [0, 0]};
+  function decodeArc(index) {
+    const source = topology.arcs[index < 0 ? ~index : index];
+    let x = 0, y = 0;
+    const points = source.map(point => {
+      x += point[0]; y += point[1];
+      return [x * transform.scale[0] + transform.translate[0], y * transform.scale[1] + transform.translate[1]];
+    });
+    return index < 0 ? points.reverse() : points;
+  }
+  function joinArcs(arcs) {
+    const points = [];
+    arcs.forEach(index => {
+      const arc = decodeArc(index);
+      points.push(...(points.length ? arc.slice(1) : arc));
+    });
+    return points;
+  }
+  function geometry(geom) {
+    if (geom.type === 'Polygon') return {type: 'Polygon', coordinates: geom.arcs.map(joinArcs)};
+    if (geom.type === 'MultiPolygon') return {type: 'MultiPolygon', coordinates: geom.arcs.map(polygon => polygon.map(joinArcs))};
+    return null;
+  }
+  return object.geometries.map(geom => ({type: 'Feature', id: geom.id, properties: geom.properties || {}, geometry: geometry(geom)})).filter(d => d.geometry);
+}
+
+function formatStateValue(value) { return mapMetric === 'raw' ? '$' + d3.format(',.0f')(value || 0) : '$' + d3.format(',.0f')(value || 0) + ' per 1M residents'; }
+function renderStateCompareBars() {
+  const container = document.getElementById('state-compare-list');
+  container.innerHTML = '';
+  ADV_NAMES.forEach(name => {
+    const valueFor = d => mapMetric === 'raw' ? d.value : d.per_capita;
+    let rows = DATA.targeting[name].states.filter(d => valueFor(d) != null).sort((a, b) => valueFor(b) - valueFor(a)).slice(0, 10);
+    const selectedRow = DATA.targeting[name].states.find(d => normalizeStateName(d.state) === selectedState);
+    if (selectedRow && !rows.some(d => d.state === selectedRow.state)) rows = [...rows.slice(0, 9), selectedRow];
+    const card = document.createElement('div'); card.className = 'state-compare-card'; card.style.borderColor = ADV_COLOR[name]; card.dataset.adv = name;
+    card.innerHTML = `<h4 style="cursor:pointer;"><span class="adv-swatch" style="background:${ADV_COLOR[name]}"></span>${name}</h4>`;
+    card.querySelector('h4').addEventListener('click', () => setHighlight(name));
+    container.appendChild(card);
+    const width = 460, rowH = 23, margin = {top: 0, right: 80, bottom: 0, left: 105};
+    const svg = d3.select(card).append('svg').attr('viewBox', `0 0 ${width} ${rows.length * rowH}`);
+    const x = d3.scaleLinear().domain([0, d3.max(rows, valueFor) || 1]).range([margin.left, width - margin.right]);
+    const row = svg.selectAll('g').data(rows).enter().append('g').attr('transform', (d, i) => `translate(0,${i * rowH})`).attr('data-state', d => normalizeStateName(d.state));
+    row.append('text').attr('x', margin.left - 8).attr('y', 16).attr('text-anchor', 'end').attr('class', 'bar-label').text(d => normalizeStateName(d.state));
+    row.append('rect').attr('x', margin.left).attr('y', 4).attr('height', 13).attr('width', d => Math.max(1, x(valueFor(d)) - margin.left)).attr('fill', ADV_COLOR[name]).attr('opacity', .85).style('cursor', 'pointer')
+      .classed('selected-state', d => normalizeStateName(d.state) === selectedState)
+      .on('click', (event, d) => { selectedState = normalizeStateName(d.state); renderMap(); })
+      .on('mousemove', (event, d) => showTooltip(`<b>${name}</b><br>${normalizeStateName(d.state)}: ${formatStateValue(valueFor(d))}`, event)).on('mouseleave', hideTooltip);
+    row.append('text').attr('x', d => x(valueFor(d)) + 5).attr('y', 16).attr('class', 'value-label').text(d => formatStateValue(valueFor(d)));
+    if (highlightedAdvertiser) card.classList.toggle('dimmed', name !== highlightedAdvertiser);
+  });
+}
+function normalizeStateName(name) {
+  if (!name) return name;
+  if (name === 'Washington, District of Columbia') return 'District of Columbia';
+  return name;
+}
+let pyramidMetric = 'share';
+function renderAgeGenderPyramid() {
+  const el = document.getElementById('chart-pyramid');
+  if (!el) return;
+  el.innerHTML = '';
+  const ages = ["65+","55-64","45-54","35-44","25-34","18-24"];
+
+  // Build per-advertiser lookups and totals (used to normalize into a share of total reach).
+  const lookup = {}, total = {}, unknownShare = {};
+  ADV_NAMES.forEach(name => {
+    lookup[name] = {};
+    let grand = 0, known = 0;
+    DATA.targeting[name].demographics.forEach(d => {
+      lookup[name][d.age + '|' + d.gender] = d.est_impressions;
+      grand += d.est_impressions;
+      if (ages.includes(d.age) && (d.gender === 'male' || d.gender === 'female')) known += d.est_impressions;
+    });
+    total[name] = known || 1;
+    unknownShare[name] = grand ? Math.round(100 - (known / grand) * 100) : 0;
+  });
+
+  const valueFor = (name, age, gender) => {
+    const raw = lookup[name][age + '|' + gender] || 0;
+    return pyramidMetric === 'share' ? (raw / total[name]) * 100 : raw;
+  };
+  const fmtVal = v => pyramidMetric === 'share' ? v.toFixed(1) + '%' : d3.format(",.0f")(v);
+
+  const width = el.clientWidth || 900;
+  const rowH = 46, gapCenter = 90, margin = { top: 20, right: 20, bottom: 30, left: 20 };
+  const height = ages.length * rowH + margin.top + margin.bottom;
+  const innerWidth = width - margin.left - margin.right;
+  const halfWidth = (innerWidth - gapCenter) / 2;
+  const centerX = margin.left + halfWidth + gapCenter / 2;
+
+  const svg = d3.select(el).append('svg').attr('viewBox', `0 0 ${width} ${height}`).attr('width', '100%')
+    .attr('role', 'img').attr('aria-label', 'Population pyramid comparing estimated reach by age and gender across three advertisers.');
+
+  const maxVal = d3.max(ADV_NAMES, name => d3.max(ages, age => Math.max(valueFor(name, age, 'male'), valueFor(name, age, 'female')))) || 1;
+  const xMale = d3.scaleLinear().domain([0, maxVal]).range([0, halfWidth]);
+  const xFemale = d3.scaleLinear().domain([0, maxVal]).range([0, halfWidth]);
+  const y = d3.scaleBand().domain(ages).range([margin.top, margin.top + ages.length * rowH]).padding(0.32);
+  const sub = d3.scaleBand().domain(ADV_NAMES).range([0, y.bandwidth()]).padding(0.18);
+
+  // Center axis labels: age band names down the middle.
+  svg.append('g').selectAll('text.age-label').data(ages).join('text')
+    .attr('class', 'age-label').attr('x', centerX).attr('y', d => y(d) + y.bandwidth() / 2)
+    .attr('text-anchor', 'middle').attr('dy', '0.32em')
+    .style('font-family', "'IBM Plex Mono', monospace").style('font-size', '11px').style('font-weight', '600')
+    .attr('fill', 'var(--ink)').text(d => d);
+
+  // Row separators.
+  svg.append('g').selectAll('line').data(ages).join('line')
+    .attr('x1', margin.left).attr('x2', width - margin.right)
+    .attr('y1', d => y(d) + y.bandwidth() + (y.step() - y.bandwidth()) / 2)
+    .attr('y2', d => y(d) + y.bandwidth() + (y.step() - y.bandwidth()) / 2)
+    .attr('stroke', 'var(--rule)').attr('stroke-opacity', 0.5);
+
+  // Side headers.
+  svg.append('text').attr('x', margin.left + halfWidth).attr('y', margin.top - 6).attr('text-anchor', 'end')
+    .style('font-family', "'IBM Plex Mono', monospace").style('font-size', '10px').style('letter-spacing', '0.08em')
+    .attr('fill', 'var(--ink-soft)').text('MALE');
+  svg.append('text').attr('x', centerX + gapCenter / 2).attr('y', margin.top - 6).attr('text-anchor', 'start')
+    .style('font-family', "'IBM Plex Mono', monospace").style('font-size', '10px').style('letter-spacing', '0.08em')
+    .attr('fill', 'var(--ink-soft)').text('FEMALE');
+
+  function drawSide(gender, xScale, anchorX, sign) {
+    ages.forEach(age => {
+      ADV_NAMES.forEach(name => {
+        const val = valueFor(name, age, gender);
+        const barW = Math.max(val > 0 ? 1.5 : 0, xScale(val));
+        const barY = y(age) + sub(name);
+        const rect = svg.append('rect')
+          .datum({ name, age, gender, val })
+          .attr('class', 'pyramid-bar').attr('data-adv', name)
+          .attr('y', barY).attr('height', sub.bandwidth())
+          .attr('x', sign < 0 ? anchorX - barW : anchorX)
+          .attr('width', barW)
+          .attr('fill', ADV_COLOR[name]).attr('opacity', 0.88)
+          .style('cursor', 'pointer');
+        rect.on('mousemove', (event) => {
+          showTooltip(`<b>${name}</b><br>${age}, ${gender}<br>${fmtVal(val)}${pyramidMetric === 'share' ? ' of total reach' : ' est. impressions'}`, event);
+        }).on('mouseleave', hideTooltip)
+          .on('click', () => setHighlight(name));
+      });
+    });
+  }
+  drawSide('male', xMale, centerX - gapCenter / 2, -1);
+  drawSide('female', xFemale, centerX + gapCenter / 2, 1);
+
+  if (highlightedAdvertiser) {
+    svg.selectAll('[data-adv]').classed('dimmed', function () { return this.getAttribute('data-adv') !== highlightedAdvertiser; });
+  }
+
+  // Legend (click to isolate, mirrors the sticky filter bar).
+  const legend = document.getElementById('pyramid-legend');
+  legend.innerHTML = '';
+  ADV_NAMES.forEach(name => {
+    const item = document.createElement('span');
+    item.className = 'pyramid-legend-item'; item.dataset.adv = name;
+    item.innerHTML = `<span class="pyramid-legend-dot" style="background:${ADV_COLOR[name]}"></span>${name}`;
+    item.addEventListener('click', () => setHighlight(name));
+    legend.appendChild(item);
+  });
+
+  document.getElementById('pyramid-note').textContent =
+    'Excludes unknown-age and unknown-gender impressions: ' +
+    ADV_NAMES.map(name => `${name} ${unknownShare[name]}%`).join(', ') + ' of each advertiser\'s reach.';
+}
+
+// ---------------- Animated race timeline (spend + reach together) ----------------
+function renderRaceChart() {
+  const el = document.getElementById('chart-race');
+  el.innerHTML = '';
+  const timeline = DATA.unified_timeline;
+  const width = el.clientWidth || 900;
+  const labelW = 78, valueW = 118;
+  const barW = width - labelW - valueW;
+  const barH = 14, rowGap = 8, blockPadTop = 26, blockH = blockPadTop + barH * 2 + rowGap + 10, blockGap = 20;
+  const height = ADV_NAMES.length * (blockH + blockGap) + 10;
+
+  const svg = d3.select(el).append('svg').attr('width', width).attr('height', height);
+
+  const maxSpend = d3.max(ADV_NAMES, n => cumulativeAt(n, 'spend', timeline.dates.length - 1));
+  const maxImp = d3.max(ADV_NAMES, n => cumulativeAt(n, 'imp', timeline.dates.length - 1));
+  const xSpend = d3.scaleLinear().domain([0, maxSpend]).range([0, barW]);
+  const xImp = d3.scaleLinear().domain([0, maxImp]).range([0, barW]);
+
+  const blocks = svg.selectAll('g.race-row').data(ADV_NAMES).enter().append('g')
+    .attr('class', 'race-row').attr('data-adv', d => d)
+    .attr('transform', (d, i) => `translate(0,${i * (blockH + blockGap) + 6})`);
+
+  blocks.append('text').attr('x', 0).attr('y', 12).attr('class', 'bar-label')
+    .attr('fill', 'var(--ink)').style('font-weight', '700').text(d => d);
+  blocks.append('text').attr('class', 'race-efficiency').attr('x', width).attr('y', 12)
+    .attr('text-anchor', 'end').attr('fill', 'var(--ink-soft)')
+    .style('font-family', "'IBM Plex Mono', monospace").style('font-size', '11px').text('$0.00 / 1k impr. so far');
+
+  ['spend', 'imp'].forEach((metric, row) => {
+    const rowY = blockPadTop + row * (barH + rowGap);
+    blocks.append('text').attr('x', 0).attr('y', rowY + barH - 3)
+      .attr('class', 'race-track-label').attr('fill', 'var(--ink-soft)')
+      .style('font-family', "'IBM Plex Mono', monospace").style('font-size', '9px').style('letter-spacing', '0.06em')
+      .text(metric === 'spend' ? 'SPEND' : 'REACH');
+    blocks.append('rect').attr('class', 'race-track').attr('x', labelW).attr('y', rowY)
+      .attr('width', barW).attr('height', barH).attr('fill', 'var(--rule)').attr('opacity', 0.35).attr('rx', 1);
+    blocks.append('rect').attr('class', `race-bar race-bar-${metric}`).attr('x', labelW).attr('y', rowY)
+      .attr('width', 0).attr('height', barH).attr('rx', 1)
+      .attr('fill', d => ADV_COLOR[d]).attr('opacity', metric === 'spend' ? 0.9 : 0.45);
+    blocks.append('text').attr('class', `race-value race-value-${metric} value-label`)
+      .attr('x', labelW + barW + 8).attr('y', rowY + barH - 3).attr('fill', 'var(--ink)')
+      .style('font-size', '11px').text(metric === 'spend' ? '$0' : '0 impr.');
+  });
+
+  playIndex = 0;
+  updateRaceFrame(xSpend, xImp, labelW, 0);
+
+  document.getElementById('play-btn').onclick = () => togglePlay(xSpend, xImp, labelW);
+}
+
+function cumulativeAt(name, metric, idx) {
+  const arr = DATA.unified_timeline[name][metric];
+  let sum = 0;
+  for (let i = 0; i <= idx; i++) sum += arr[i];
+  return sum;
+}
+function updateRaceFrame(xSpend, xImp, labelW, idx) {
+  const timeline = DATA.unified_timeline;
+  const dateLabel = timeline.dates[idx];
+  document.getElementById('play-date-label').textContent = dateLabel;
+  document.getElementById('play-progress-fill').style.width = (idx / (timeline.dates.length - 1) * 100) + '%';
+  d3.selectAll('.race-row').each(function (name) {
+    const g = d3.select(this);
+    const cumSpend = cumulativeAt(name, 'spend', idx);
+    const cumImp = cumulativeAt(name, 'imp', idx);
+    g.select('.race-bar-spend').interrupt().transition().duration(150).attr('width', xSpend(cumSpend));
+    g.select('.race-bar-imp').interrupt().transition().duration(150).attr('width', xImp(cumImp));
+    g.select('.race-value-spend').text('$' + d3.format(",.0f")(cumSpend));
+    g.select('.race-value-imp').text((cumImp >= 1000000 ? (cumImp / 1000000).toFixed(2) + 'M' : d3.format(",.0f")(cumImp)) + ' impr.');
+    const perK = cumImp > 0 ? (cumSpend / cumImp * 1000) : 0;
+    g.select('.race-efficiency').text(cumImp > 0 ? `$${perK.toFixed(2)} / 1k impr. so far` : 'no reach yet');
+  });
+}
+function togglePlay(xSpend, xImp, labelW) {
+  const btn = document.getElementById('play-btn');
+  const timeline = DATA.unified_timeline;
+  if (playTimer) {
+    clearInterval(playTimer); playTimer = null;
+    btn.innerHTML = '&#9654; Play';
+    return;
+  }
+  if (playIndex >= timeline.dates.length - 1) playIndex = 0;
+  btn.innerHTML = '&#10074;&#10074; Pause';
+  playTimer = setInterval(() => {
+    playIndex++;
+    if (playIndex >= timeline.dates.length) {
+      clearInterval(playTimer); playTimer = null;
+      btn.innerHTML = '&#8635; Replay';
+      playIndex = timeline.dates.length - 1;
+      return;
+    }
+    updateRaceFrame(xSpend, xImp, labelW, playIndex);
+  }, 550);
+}
+
+// ---------------- Init (runs last, after every function/variable above is defined) ----------------
+try { renderAll(); } catch (e) { console.error('Chart rendering failed (data and text will still display):', e); }
+
+</script>
+</body>
+</html>
