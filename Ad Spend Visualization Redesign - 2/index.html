@@ -19,121 +19,136 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="./data.js"></script>
 <style>
-  html { scroll-behavior: smooth; background: #FFFFFF; }
-  body { margin: 0; background: #FFFFFF; color: #0A0C10; font-family: 'Figtree', 'Segoe UI', Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  html, body { height: 100%; overflow: hidden; background: #FFFFFF; }
+  body { margin: 0; color: #0A0C10; font-family: 'Figtree', 'Segoe UI', Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
   a { color: #0866FF; text-decoration: none; }
   a:hover { color: #0A4FC4; }
   ::selection { background: #CFE1FF; color: #0A0C10; }
   #calc-track:hover #calc-thumb, #calc-track:focus-visible #calc-thumb { transform: scale(1.14); }
   #calc-track:focus-visible { outline: none; }
-  @keyframes advScrollHint { 0%,100% { transform: translateY(0); opacity:.35 } 50% { transform: translateY(7px); opacity:.9 } }
+  #chapter-prev:hover:not(:disabled) { background: rgba(10,12,16,.08); }
+  #chapter-next:hover:not(:disabled) { background: #23262B; }
+  #chapter-prev:focus-visible, #chapter-next:focus-visible, #chapter-labels button:focus-visible { outline: 2px solid #0866FF; outline-offset: 2px; }
+  #adlib-links a:focus-visible { outline: 2px solid #0866FF; outline-offset: 2px; }
   @keyframes advPulse { 0%,100% { opacity:.3 } 50% { opacity:.75 } }
+  .story-page { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; box-sizing: border-box; opacity: 0; transform: translateX(48px); pointer-events: none; transition: opacity .5s cubic-bezier(.4,0,.2,1), transform .5s cubic-bezier(.4,0,.2,1); }
+  #hero.story-page { height: 90%; }
+  .story-page.is-before { transform: translateX(-48px); }
+  .story-page.is-active { opacity: 1; transform: translateX(0); pointer-events: auto; }
+  @media (prefers-reduced-motion: reduce) { .story-page { transition: opacity .2s ease; transform: none !important; } }
 </style>
 </helmet>
 
-<div style="position:relative; width:100%; background:#FFFFFF; color:#0A0C10; font-family:'Figtree',Helvetica,Arial,sans-serif;">
+<div style="position:relative; width:100%; height:100%; background:#FFFFFF; color:#0A0C10; font-family:'Figtree',Helvetica,Arial,sans-serif;">
 
-  <div id="adv-tip" style="position:fixed; z-index:400; pointer-events:none; opacity:0; transition:opacity .12s ease; background:#FFFFFF; border:1px solid rgba(10,12,16,.1); color:#0A0C10; padding:10px 13px; border-radius:12px; font-size:12.5px; line-height:1.5; max-width:250px; box-shadow:0 18px 44px rgba(10,12,16,.16);"></div>
+  <div id="adv-tip" style="position:fixed; z-index:400; pointer-events:none; opacity:0; transition:opacity .12s ease; background:#FFFFFF; border:1px solid rgba(10,12,16,.1); color:#0A0C10; padding:10px 13px; border-radius:12px; font-size:14px; line-height:1.5; max-width:250px; box-shadow:0 18px 44px rgba(10,12,16,.16);"></div>
+
+  <nav id="chapter-nav" aria-label="Story chapters" style="position:fixed; left:50%; bottom:22px; transform:translate(-50%,0); z-index:350; opacity:1; pointer-events:auto; transition:opacity .35s ease; max-width:min(94vw,760px);">
+    <div style="display:flex; align-items:center; gap:clamp(6px,1.6vw,16px); background:rgba(233,236,240,.92); backdrop-filter:blur(14px); border:1px solid rgba(10,12,16,.06); border-radius:999px; padding:8px 10px; box-shadow:0 14px 34px rgba(10,12,16,.12);">
+      <button id="chapter-prev" aria-label="Previous page" style="flex:0 0 auto; display:flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:50%; border:none; background:transparent; color:#0A0C10; font-size:17px; cursor:pointer; transition:background .2s ease, opacity .2s ease;">←</button>
+      <div id="chapter-labels" style="display:flex; align-items:center; gap:clamp(10px,2vw,22px); overflow:hidden; white-space:nowrap; font-family:Figtree,sans-serif;"></div>
+      <button id="chapter-next" aria-label="Next page" style="flex:0 0 auto; display:flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:50%; border:none; background:#0A0C10; color:#FFFFFF; font-size:17px; cursor:pointer; transition:background .2s ease, opacity .2s ease;">→</button>
+    </div>
+  </nav>
 
   <header style="position:fixed; top:0; left:0; right:0; z-index:300; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; padding:14px clamp(16px,4vw,44px); background:rgba(255,255,255,.86); backdrop-filter:blur(18px); border-bottom:1px solid rgba(10,12,16,.08);">
     <div style="display:flex; align-items:center; gap:11px;">
       <span style="width:9px; height:9px; border-radius:50%; background:#0866FF;"></span>
-      <span style="font-size:13px; font-weight:700; letter-spacing:-0.01em;">Ad Spend Case File</span>
-      <span style="font-family:'Figtree',sans-serif; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#7A828C;">Meta Ad Library · Last 30 days</span>
+      <span style="font-size:14px; font-weight:700; letter-spacing:-0.01em;">Meta Ad Spend Case File</span>
+      <span style="font-family:'Figtree',sans-serif; font-size:14px; letter-spacing:.02em; color:#7A828C;">- HCDE 511 Summer 2026 Penny Yeh</span>
     </div>
     <div id="adv-pills" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-      <span style="font-family:'Figtree',sans-serif; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:#7A828C; margin-right:2px;">Focus</span>
+      <span style="font-family:'Figtree',sans-serif; font-size:14px; letter-spacing:.12em; text-transform:uppercase; color:#7A828C; margin-right:2px;">Focus</span>
     </div>
   </header>
 
-  <section style="position:relative; min-height:100svh; display:flex; align-items:flex-end; overflow:hidden; padding:0 clamp(16px,4vw,44px) clamp(40px,7vh,80px);">
+  <div id="story-viewport" style="position:fixed; inset:0; overflow:hidden;">
+
+  <section id="hero" class="story-page" style="display:flex; align-items:flex-end; padding:0 clamp(16px,4vw,44px) clamp(40px,7vh,80px);">
     <canvas id="adv-hero-canvas" style="position:absolute; inset:0; width:100%; height:100%; display:block;"></canvas>
     <div style="position:absolute; inset:0; background:radial-gradient(120% 90% at 78% 30%, rgba(8,102,255,.07), transparent 60%), linear-gradient(to bottom, rgba(255,255,255,.9) 0%, rgba(255,255,255,0) 34%, rgba(255,255,255,.72) 78%, #FFFFFF 100%); pointer-events:none;"></div>
-    <div style="position:relative; width:100%; max-width:1500px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:clamp(24px,4vw,60px); align-items:end;">
+    <div style="position:relative; width:100%; max-width:1200px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:clamp(24px,4vw,60px); align-items:end;">
       <div>
-        <div style="display:flex; align-items:center; gap:10px; font-family:Figtree,sans-serif; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#5A616B; margin-bottom:22px;">
+        <div style="display:flex; align-items:center; gap:10px; font-family:Figtree,sans-serif; font-size:14px; letter-spacing:.14em; text-transform:uppercase; color:#5A616B; margin-bottom:22px;">
           <span style="width:22px; height:1px; background:#0866FF;"></span>US political &amp; social-issue advertising
         </div>
         <h1 style="margin:0; font-size:clamp(2.6rem,6.4vw,5.6rem); line-height:0.94; letter-spacing:-0.045em; font-weight:800; text-wrap:balance;">A million dollars,<br>spent three<br><span style="color:#0866FF;">different ways.</span></h1>
-        <p style="margin:26px 0 0; max-width:46ch; font-size:clamp(1rem,1.3vw,1.15rem); line-height:1.6; color:#4B5158; text-wrap:pretty;">14,071 advertisers disclosed political ad spending on Meta in the last 30 days. While three advertisers spent roughly the same amount, the value generated by their ads varied drastically.</p>
-        <div style="margin-top:34px; display:flex; align-items:center; gap:12px; font-family:Figtree,sans-serif; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:#7A828C;">
-          <span style="display:inline-block; animation:advScrollHint 2.2s ease-in-out infinite;">↓</span> Scroll to open the file
-        </div>
+        <p style="margin:26px 0 0; max-width:46ch; font-size:clamp(1.125rem,1.4vw,1.375rem); line-height:1.6; color:#4B5158; text-wrap:pretty;">14,071 advertisers disclosed political ad spending on Meta in the last 30 days. While three advertisers spent roughly the same amount, the value generated by their ads varied drastically.</p>
       </div>
       <div id="hero-stats" style="display:grid; gap:1px; background:rgba(10,12,16,.09); border:1px solid rgba(10,12,16,.09); border-radius:16px; overflow:hidden;"></div>
     </div>
   </section>
 
-  <section style="position:relative; padding:clamp(70px,12vh,150px) clamp(16px,4vw,44px);">
-    <div style="max-width:1500px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:clamp(28px,4vw,64px); align-items:start;">
+  <section id="page-1" class="story-page" style="padding:clamp(70px,12vh,150px) clamp(16px,4vw,44px);">
+    <div style="max-width:1200px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:clamp(28px,4vw,64px); align-items:start;">
       <div data-reveal="1">
-        <div style="font-family:Figtree,sans-serif; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#0866FF; margin-bottom:16px;">01 — The field</div>
+        <div style="font-family:Figtree,sans-serif; font-size:16px; letter-spacing:.13em; text-transform:uppercase; color:#0866FF; font-weight:700; margin-bottom:16px;">01 — The field</div>
         <h2 style="margin:0; font-size:clamp(1.8rem,3.2vw,2.9rem); line-height:1.06; letter-spacing:-0.035em; font-weight:800; max-width:18ch;">The Outliers Spend Millions on Ads.</h2>
       </div>
       <div data-reveal="1" style="display:grid; gap:18px;">
-        <p style="margin:0; font-size:clamp(1rem,1.2vw,1.12rem); line-height:1.65; color:#4B5158; max-width:56ch; text-wrap:pretty;">Among advertisers who spent ads money, most spent only a few hundred dollars, while a small number spent more than $1 million.</p>
+        <p style="margin:0; font-size:clamp(1.125rem,1.4vw,1.375rem); line-height:1.65; color:#4B5158; max-width:56ch; text-wrap:pretty;">Among advertisers who spent ads money, most spent only a few hundred dollars, while a small number spent more than $1 million.</p>
         <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; border-bottom:1px solid rgba(10,12,16,.08); padding-bottom:8px;">
           <div style="font-size:15px; font-weight:700; letter-spacing:-0.01em;">Advertisers by reported spend</div>
-          <div style="font-family:Figtree,sans-serif; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#7A828C;">Histogram</div>
+          <div style="font-family:Figtree,sans-serif; font-size:14px; letter-spacing:.1em; text-transform:uppercase; color:#7A828C;">Histogram</div>
         </div>
         <div id="chart-benchmark" style="width:100%;"></div>
-        <p style="margin:0; font-family:Figtree,sans-serif; font-size:11.5px; color:#7A828C; letter-spacing:.01em; line-height:1.6;">Distribution of reported 30-day spend, log scale. 7,378 advertisers reported $0. Dotted markers show where the three advertisers in this file sit.</p>
+        <p style="margin:0; font-family:Figtree,sans-serif; font-size:14px; color:#7A828C; letter-spacing:.01em; line-height:1.6;">Distribution of reported 30-day spend, log scale. 7,378 advertisers reported $0. Dotted markers show where the three advertisers in this file sit.</p>
       </div>
     </div>
   </section>
 
-  <section style="position:relative; padding:0 clamp(16px,4vw,44px) clamp(70px,12vh,140px);">
-    <div style="max-width:1500px; margin:0 auto;">
+  <section id="page-2" class="story-page" style="padding:clamp(80px,13vh,150px) clamp(16px,4vw,44px) clamp(70px,12vh,140px);">
+    <div style="max-width:1200px; margin:0 auto;">
       <div data-reveal="1" style="display:flex; align-items:flex-end; justify-content:space-between; gap:28px; flex-wrap:wrap; margin-bottom:36px;">
         <div>
-          <div style="font-family:Figtree,sans-serif; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#0866FF; margin-bottom:16px;">02 — The leaderboard</div>
+          <div style="font-family:Figtree,sans-serif; font-size:16px; letter-spacing:.13em; text-transform:uppercase; color:#0866FF; font-weight:700; margin-bottom:16px;">02 — The leaderboard</div>
           <h2 style="margin:0; font-size:clamp(1.8rem,3.2vw,2.9rem); line-height:1.06; letter-spacing:-0.035em; font-weight:800; max-width:20ch;">Three Biggest Spenders: Ground News, Democrats, and Abdul El-Sayed</h2>
         </div>
-        <p style="margin:0; font-size:1rem; line-height:1.6; color:#4B5158; max-width:42ch; text-wrap:pretty;">Ground News, Democrats and Abdul El-Sayed take the top three places by reported spend. Click any of them to follow that advertiser through the whole file.</p>
+        <p style="margin:0; font-size:clamp(1.125rem,1.4vw,1.375rem); line-height:1.6; color:#4B5158; max-width:42ch; text-wrap:pretty;">Ground News, Democrats and Abdul El-Sayed take the top three places by reported spend. Click any of them to follow that advertiser through the whole file.</p>
       </div>
       <div data-reveal="1" style="background:#F6F7F9; border:1px solid rgba(10,12,16,.07); border-radius:20px; padding:clamp(18px,2.4vw,30px);">
         <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:700; letter-spacing:-0.01em;">Top 10 advertisers, 30-day reported spend</div>
-          <div style="font-family:Figtree,sans-serif; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#7A828C;">Ranked bar chart</div>
+          <div style="font-family:Figtree,sans-serif; font-size:14px; letter-spacing:.1em; text-transform:uppercase; color:#7A828C;">Ranked bar chart</div>
         </div>
         <div id="chart-top-spenders"></div>
       </div>
     </div>
   </section>
 
-  <section style="position:relative; padding:0 clamp(16px,4vw,44px) clamp(70px,12vh,140px);">
-    <div style="max-width:1500px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:clamp(20px,2.4vw,30px); align-items:stretch;">
+  <section id="page-3" class="story-page" style="padding:clamp(80px,13vh,150px) clamp(16px,4vw,44px) clamp(70px,12vh,140px);">
+    <div style="max-width:1200px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:clamp(20px,2.4vw,30px); align-items:stretch;">
       <div data-reveal="1" style="display:flex; flex-direction:column; gap:20px; justify-content:center;">
-        <div style="font-family:Figtree,sans-serif; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#0866FF;">03 — The value gap</div>
+        <div style="font-family:Figtree,sans-serif; font-size:16px; letter-spacing:.13em; text-transform:uppercase; color:#0866FF; font-weight:700;">03 — The value gap</div>
         <h2 style="margin:0; font-size:clamp(1.8rem,3.2vw,2.9rem); line-height:1.06; letter-spacing:-0.035em; font-weight:800; max-width:16ch;">The biggest spender did not win.</h2>
-        <p style="margin:0; font-size:clamp(1rem,1.2vw,1.12rem); line-height:1.65; color:#4B5158; max-width:48ch; text-wrap:pretty;">Ranked by spend, Ground News leads. But ranked by impressions per dollar, the order flips: Abdul El-Sayed generated roughly twice as many impressions per dollar while spending the least of the three.</p>
+        <p style="margin:0; font-size:clamp(1.125rem,1.4vw,1.375rem); line-height:1.65; color:#4B5158; max-width:48ch; text-wrap:pretty;">Ranked by spend, Ground News leads. But ranked by impressions per dollar, the order flips: Abdul El-Sayed generated roughly twice as many impressions per dollar while spending the least of the three.</p>
         <div id="value-callout" style="display:grid; gap:10px;"></div>
-        <p id="value-note" style="margin:0; font-family:Figtree,sans-serif; font-size:11.5px; line-height:1.65; color:#7A828C; max-width:52ch; text-wrap:pretty;"></p>
+        <p id="value-note" style="margin:0; font-family:Figtree,sans-serif; font-size:14px; line-height:1.65; color:#7A828C; max-width:52ch; text-wrap:pretty;"></p>
       </div>
       <div data-reveal="1" style="background:#F6F7F9; border:1px solid rgba(10,12,16,.07); border-radius:20px; padding:clamp(18px,2.4vw,30px);">
         <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:8px;">
           <div style="font-size:15px; font-weight:700; letter-spacing:-0.01em;">Spend rank → value rank</div>
-          <div style="font-family:Figtree,sans-serif; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#7A828C;">Slopegraph</div>
+          <div style="font-family:Figtree,sans-serif; font-size:14px; letter-spacing:.1em; text-transform:uppercase; color:#7A828C;">Slopegraph</div>
         </div>
         <div id="chart-slope"></div>
       </div>
     </div>
   </section>
 
-  <section style="position:relative; padding:0 clamp(16px,4vw,44px) clamp(70px,12vh,140px);">
-    <div style="max-width:1500px; margin:0 auto;">
+  <section id="page-4" class="story-page" style="padding:clamp(80px,13vh,150px) clamp(16px,4vw,44px) clamp(70px,12vh,140px);">
+    <div style="max-width:1200px; margin:0 auto;">
       <div data-reveal="1" style="display:flex; align-items:flex-end; justify-content:space-between; gap:28px; flex-wrap:wrap; margin-bottom:32px;">
         <div>
-          <div style="font-family:Figtree,sans-serif; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#0866FF; margin-bottom:16px;">04 — The map</div>
+          <div style="font-family:Figtree,sans-serif; font-size:16px; letter-spacing:.13em; text-transform:uppercase; color:#0866FF; font-weight:700; margin-bottom:16px;">04 — The map</div>
           <h2 style="margin:0; font-size:clamp(1.8rem,3.2vw,2.9rem); line-height:1.06; letter-spacing:-0.035em; font-weight:800; max-width:20ch;">Where the dollars landed.</h2>
         </div>
-        <p style="margin:0; font-size:1rem; line-height:1.6; color:#4B5158; max-width:42ch; text-wrap:pretty;">The map shades by whichever advertiser is in focus, or by all three combined.</p>
+        <p style="margin:0; font-size:clamp(1.125rem,1.4vw,1.375rem); line-height:1.6; color:#4B5158; max-width:42ch; text-wrap:pretty;">The map shades by whichever advertiser is in focus, or by all three combined.</p>
       </div>
       <div data-reveal="1" style="background:#F6F7F9; border:1px solid rgba(10,12,16,.07); border-radius:20px; padding:clamp(18px,2.4vw,30px); display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); gap:clamp(20px,3vw,44px); align-items:start;">
         <div>
           <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:6px;">
             <div style="font-size:15px; font-weight:700; letter-spacing:-0.01em;">Spend by state</div>
-            <div style="font-family:Figtree,sans-serif; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#7A828C;">Choropleth map</div>
+            <div style="font-family:Figtree,sans-serif; font-size:14px; letter-spacing:.1em; text-transform:uppercase; color:#7A828C;">Choropleth map</div>
           </div>
           <div id="us-map-wrap"></div>
           <div id="map-scale" style="margin-top:2px;"></div>
@@ -141,7 +156,7 @@
         <div>
           <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:12px;">
             <div style="font-size:15px; font-weight:700; letter-spacing:-0.01em;">Top five states per advertiser</div>
-            <div style="font-family:Figtree,sans-serif; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#7A828C;">Ranked bar chart</div>
+            <div style="font-family:Figtree,sans-serif; font-size:14px; letter-spacing:.1em; text-transform:uppercase; color:#7A828C;">Ranked bar chart</div>
           </div>
           <div id="state-compare-list" style="display:grid; gap:16px;"></div>
         </div>
@@ -149,60 +164,62 @@
     </div>
   </section>
 
-  <section style="position:relative; padding:0 clamp(16px,4vw,44px) clamp(70px,12vh,140px);">
-    <div style="max-width:1500px; margin:0 auto;">
+  <section id="page-5" class="story-page" style="padding:clamp(80px,13vh,150px) clamp(16px,4vw,44px) clamp(70px,12vh,140px);">
+    <div style="max-width:1200px; margin:0 auto;">
       <div data-reveal="1" style="display:flex; align-items:flex-end; justify-content:space-between; gap:28px; flex-wrap:wrap; margin-bottom:32px;">
         <div>
-          <div style="font-family:Figtree,sans-serif; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#0866FF; margin-bottom:16px;">05 — The audience</div>
+          <div style="font-family:Figtree,sans-serif; font-size:16px; letter-spacing:.13em; text-transform:uppercase; color:#0866FF; font-weight:700; margin-bottom:16px;">05 — The audience</div>
           <h2 style="margin:0; font-size:clamp(1.8rem,3.2vw,2.9rem); line-height:1.06; letter-spacing:-0.035em; font-weight:800; max-width:20ch;">Who actually saw the ads.</h2>
         </div>
-        <p style="margin:0; font-size:1rem; line-height:1.6; color:#4B5158; max-width:42ch; text-wrap:pretty;">Each line connects an advertiser's male and female reach for one age group, on the same scale &mdash; so the length of the line is the gap. Switch to the population pyramid to see the shape instead.</p>
+        <p style="margin:0; font-size:clamp(1.125rem,1.4vw,1.375rem); line-height:1.6; color:#4B5158; max-width:42ch; text-wrap:pretty;">Each line connects an advertiser's male and female reach for one age group, on the same scale &mdash; so the length of the line is the gap. Switch to the population pyramid to see the shape instead.</p>
       </div>
       <div data-reveal="1" style="background:#F6F7F9; border:1px solid rgba(10,12,16,.07); border-radius:20px; padding:clamp(18px,2.4vw,30px);">
         <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:10px;">
           <div style="font-size:15px; font-weight:700; letter-spacing:-0.01em;">Estimated reach by age and gender</div>
           <div style="display:flex; gap:8px;">
-            <button id="view-toggle-compare" style="display:inline-flex;align-items:center;gap:7px;white-space:nowrap;padding:6px 13px;border-radius:999px;border:1px solid #0866FF;background:#0866FF;color:#FFFFFF;font-family:Figtree,sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;transition:all .25s ease;">Compare view</button>
-            <button id="view-toggle-pyramid" style="display:inline-flex;align-items:center;gap:7px;white-space:nowrap;padding:6px 13px;border-radius:999px;border:1px solid rgba(10,12,16,.14);background:#FFFFFF;color:#4B5158;font-family:Figtree,sans-serif;font-size:12.5px;font-weight:500;cursor:pointer;transition:all .25s ease;">Population pyramid</button>
+            <button id="view-toggle-compare" style="display:inline-flex;align-items:center;gap:7px;white-space:nowrap;padding:6px 13px;border-radius:999px;border:1px solid #0866FF;background:#0866FF;color:#FFFFFF;font-family:Figtree,sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .25s ease;">Compare view</button>
+            <button id="view-toggle-pyramid" style="display:inline-flex;align-items:center;gap:7px;white-space:nowrap;padding:6px 13px;border-radius:999px;border:1px solid rgba(10,12,16,.14);background:#FFFFFF;color:#4B5158;font-family:Figtree,sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .25s ease;">Population pyramid</button>
           </div>
         </div>
         <div id="chart-dumbbell"></div>
         <div id="chart-pyramid" style="display:none;"></div>
-        <p id="pyramid-note" style="margin:14px 0 0; font-family:Figtree,sans-serif; font-size:11.5px; color:#7A828C; letter-spacing:.01em; line-height:1.6;"></p>
+        <p id="pyramid-note" style="margin:14px 0 0; font-family:Figtree,sans-serif; font-size:14px; color:#7A828C; letter-spacing:.01em; line-height:1.6;"></p>
       </div>
     </div>
   </section>
 
-  <section style="position:relative; padding:0 clamp(16px,4vw,44px) clamp(70px,12vh,140px);">
-    <div style="max-width:1500px; margin:0 auto;">
-      <div data-reveal="1" style="display:flex; align-items:flex-end; justify-content:space-between; gap:28px; flex-wrap:wrap; margin-bottom:32px;">
-        <div>
-          <div style="font-family:Figtree,sans-serif; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#0866FF; margin-bottom:16px;">06 — Your turn</div>
-          <h2 style="margin:0; font-size:clamp(1.8rem,3.2vw,2.9rem); line-height:1.06; letter-spacing:-0.035em; font-weight:800; max-width:20ch;">What a budget buys at each rate.</h2>
-        </div>
-        <p style="margin:0; font-size:1rem; line-height:1.6; color:#4B5158; max-width:42ch; text-wrap:pretty;">Set an amount and see it converted into estimated impressions at each advertiser's observed rate.</p>
+  <section id="page-6" class="story-page" style="padding:clamp(80px,13vh,150px) clamp(16px,4vw,44px) clamp(70px,12vh,140px);">
+    <div style="max-width:1200px; margin:0 auto;">
+      <div data-reveal="1" style="margin-bottom:32px;">
+        <div style="font-family:Figtree,sans-serif; font-size:16px; letter-spacing:.13em; text-transform:uppercase; color:#0866FF; font-weight:700; margin-bottom:16px;">06 — Impression Estimate</div>
+        <h2 style="margin:0 0 14px; font-size:clamp(1.8rem,3.2vw,2.9rem); line-height:1.06; letter-spacing:-0.035em; font-weight:800; max-width:26ch;">Your Turn: Set a Budget to Compare Impressions</h2>
+        <p style="margin:0; font-size:clamp(1.125rem,1.4vw,1.375rem); line-height:1.6; color:#4B5158; max-width:56ch; text-wrap:pretty;">Set a budget to see how many impressions each advertiser could generate.</p>
       </div>
-      <div data-reveal="1" style="background:#F6F7F9; border:1px solid rgba(10,12,16,.07); border-radius:20px; padding:clamp(22px,3vw,40px); display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:clamp(24px,3vw,48px); align-items:center;">
-        <div>
-          <div style="display:flex; align-items:baseline; justify-content:space-between; font-family:Figtree,sans-serif; font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:#7A828C;"><span>Test budget</span><span>Rate calculator</span></div>
-          <div id="calc-amount" style="font-size:clamp(3rem,6vw,4.6rem); font-weight:800; letter-spacing:-0.04em; line-height:1.05; margin:6px 0 4px;">$500</div>
-          <div id="calc-track" role="slider" aria-label="Test budget" tabindex="0" style="position:relative; height:26px; margin:18px 0 8px; cursor:pointer; touch-action:none; user-select:none;">
+      <div data-reveal="1" style="background:#F6F7F9; border:1px solid rgba(10,12,16,.07); border-radius:20px; padding:clamp(18px,2.4vw,30px); display:grid; grid-template-columns:minmax(300px,1.15fr) minmax(260px,0.85fr); gap:clamp(18px,2.4vw,28px); align-items:start;">
+        <div style="background:#FFFFFF; border:1px solid rgba(10,12,16,.07); border-radius:16px; padding:clamp(20px,2.6vw,32px);">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; font-family:Figtree,sans-serif; font-size:14px; letter-spacing:.12em; text-transform:uppercase; color:#7A828C;"><span>Your budget</span><span>Rate calculator</span></div>
+          <div id="calc-amount" style="font-size:clamp(2.6rem,5.4vw,4.2rem); font-weight:800; letter-spacing:-0.04em; line-height:1.05; margin:6px 0 4px;">$500</div>
+          <div id="calc-track" role="slider" aria-label="Your budget" tabindex="0" style="position:relative; height:26px; margin:18px 0 8px; cursor:pointer; touch-action:none; user-select:none;">
             <div style="position:absolute; left:0; right:0; top:11px; height:4px; border-radius:2px; background:rgba(10,12,16,.12);"></div>
             <div id="calc-fill" style="position:absolute; left:0; top:11px; height:4px; width:50%; border-radius:2px; background:#0866FF;"></div>
             <div id="calc-thumb" style="position:absolute; top:3px; left:50%; width:20px; height:20px; margin-left:-10px; border-radius:50%; background:#0866FF; border:3px solid #FFFFFF; box-shadow:0 0 0 1px rgba(10,12,16,.14), 0 4px 14px rgba(8,102,255,.35); transition:transform .15s ease;"></div>
           </div>
-          <div style="display:flex; justify-content:space-between; font-family:Figtree,sans-serif; font-size:11px; color:#7A828C;"><span>$1</span><span>$50,000</span></div>
+          <div style="display:flex; justify-content:space-between; font-family:Figtree,sans-serif; font-size:14px; color:#7A828C; margin-bottom:22px;"><span>$1</span><span>$50,000</span></div>
+          <div id="calc-results" style="display:grid; gap:12px;"></div>
         </div>
-        <div id="calc-results" style="display:grid; gap:10px;"></div>
+        <div style="background:#FFFFFF; border:1px solid rgba(10,12,16,.07); border-radius:16px; padding:clamp(20px,2.6vw,32px);">
+          <div style="font-size:16px; font-weight:800; letter-spacing:-0.01em; line-height:1.4; color:#0A0C10; margin-bottom:18px;">Look into how these advertisers created their ad campaigns. Click on each to learn more on the Meta Ad Library.</div>
+          <div id="adlib-links" style="display:grid; gap:6px;"></div>
+        </div>
       </div>
     </div>
   </section>
 
-  <footer style="border-top:1px solid rgba(10,12,16,.1); padding:clamp(40px,7vh,80px) clamp(16px,4vw,44px) clamp(50px,9vh,110px);">
-    <div style="max-width:1500px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:clamp(24px,4vw,60px);">
+  <footer id="page-info" class="story-page" style="border-top:1px solid rgba(10,12,16,.1); padding:clamp(40px,7vh,80px) clamp(16px,4vw,44px) clamp(50px,9vh,110px); display:flex; align-items:center;">
+    <div style="max-width:1200px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:clamp(24px,4vw,60px); width:100%;">
       <div>
-        <div style="font-family:Figtree,sans-serif; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#0866FF; margin-bottom:14px;">Method</div>
-        <p style="margin:0; font-size:14px; line-height:1.7; color:#5A616B; max-width:60ch; text-wrap:pretty;">
+        <div style="font-family:Figtree,sans-serif; font-size:16px; letter-spacing:.13em; text-transform:uppercase; color:#0866FF; font-weight:700; margin-bottom:14px;">Method</div>
+        <p style="margin:0; font-size:15px; line-height:1.7; color:#5A616B; max-width:60ch; text-wrap:pretty;">
           <a href="https://www.facebook.com/ads/library/report/?source=onboarding" target="_blank" rel="noopener noreferrer">
             Source: Meta Ad Library
           </a>
@@ -210,8 +227,8 @@
         </p>
       </div>
       <div>
-        <div style="font-family:Figtree,sans-serif; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#0866FF; margin-bottom:14px;">Reading the file</div>
-        <p style="margin:0; font-size:14px; line-height:1.7; color:#5A616B; max-width:60ch; text-wrap:pretty;">
+        <div style="font-family:Figtree,sans-serif; font-size:16px; letter-spacing:.13em; text-transform:uppercase; color:#0866FF; font-weight:700; margin-bottom:14px;">Data</div>
+        <p style="margin:0; font-size:15px; line-height:1.7; color:#5A616B; max-width:60ch; text-wrap:pretty;">
           Two spend figures appear throughout. Aggregate spend comes from Meta's 
           <a href="https://github.com/pen-pen777/Meta-Ads-Data-Visualization/tree/main/Ad%20Spend%20Visualization%20Redesign%20-%202/data" target="_blank" rel="noopener noreferrer">advertiser-level dataset</a>
           and drives the leaderboard. Per-ad spend is the sum of the individual ad disclosures 
@@ -220,14 +237,32 @@
       </div>
     </div>
   </footer>
+
+  </div>
 </div>
 
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440}}">
-const C = { 'Ground News': '#0E9F86', 'Democrats': '#0866FF', 'Abdul El-Sayed': '#E23F63' };
+const C = { 'Ground News': '#0E9F86', 'Democrats': '#0866FF', 'Abdul El-Sayed': '#8A6D00' };
 const NEUTRAL = '#CDD2D9';
 const INK = '#0A0C10', MUTED = '#7A828C', FAINT = '#A5ABB4', LINE = 'rgba(10,12,16,.1)';
 const NAMES = ['Ground News', 'Democrats', 'Abdul El-Sayed'];
+const PAGE_IDS = ['hero', 'page-1', 'page-2', 'page-3', 'page-4', 'page-5', 'page-6', 'page-info'];
+const NAV_ITEMS = [
+  { pageId: 'hero', short: 'Home' },
+  { pageId: 'page-1', short: '01 — The field' },
+  { pageId: 'page-2', short: '02 — The leaderboard' },
+  { pageId: 'page-3', short: '03 — The value gap' },
+  { pageId: 'page-4', short: '04 — The map' },
+  { pageId: 'page-5', short: '05 — The audience' },
+  { pageId: 'page-6', short: '06 — Impression estimate' },
+  { pageId: 'page-info', short: 'Method & Data' }
+];
+const AD_LIBRARY = {
+  'Abdul El-Sayed': 'https://www.facebook.com/ads/library/?active_status=active&ad_type=political_and_issue_ads&country=US&is_targeted_country=false&media_type=all&search_type=page&sort_data[mode]=total_impressions&sort_data[direction]=desc&source=ad-report&view_all_page_id=174371409720577',
+  'Ground News': 'https://www.facebook.com/ads/library/?active_status=active&ad_type=political_and_issue_ads&country=US&is_targeted_country=false&media_type=all&search_type=page&sort_data[mode]=total_impressions&sort_data[direction]=desc&source=ad-report&view_all_page_id=2011677365822396',
+  'Democrats': 'https://www.facebook.com/ads/library/?active_status=active&ad_type=political_and_issue_ads&country=US&is_targeted_country=false&media_type=all&search_type=page&sort_data[mode]=total_impressions&sort_data[direction]=desc&source=ad-report&view_all_page_id=12301006942'
+};
 
 class Component extends DCLogic {
   componentDidMount() {
@@ -259,10 +294,11 @@ class Component extends DCLogic {
     this.buildPills();
     this.buildHeroStats();
     this.buildValueCallout();
+    this.buildAdLibraryLinks();
     this.renderAll();
     this.initCalculator();
     this.initHero3D();
-    this.initScroll();
+    this.initChapterNav();
     this.q('view-toggle-compare').addEventListener('click', () => this.setAgeGenderView('dumbbell'));
     this.q('view-toggle-pyramid').addEventListener('click', () => this.setAgeGenderView('pyramid'));
 
@@ -329,7 +365,7 @@ class Component extends DCLogic {
     NAMES.forEach(n => {
       const b = document.createElement('button');
       b.setAttribute('data-pill', n);
-      b.style.cssText = 'display:inline-flex;align-items:center;gap:7px;white-space:nowrap;padding:6px 13px;border-radius:999px;border:1px solid rgba(10,12,16,.14);background:#FFFFFF;color:#4B5158;font-family:Figtree,sans-serif;font-size:12.5px;font-weight:500;cursor:pointer;transition:all .25s ease;';
+      b.style.cssText = 'display:inline-flex;align-items:center;gap:7px;white-space:nowrap;padding:6px 13px;border-radius:999px;border:1px solid rgba(10,12,16,.14);background:#FFFFFF;color:#4B5158;font-family:Figtree,sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .25s ease;';
       b.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:' + C[n] + ';"></span>' + n;
       b.addEventListener('click', () => this.setHighlight(n));
       wrap.appendChild(b);
@@ -337,7 +373,7 @@ class Component extends DCLogic {
     const clr = document.createElement('button');
     clr.id = 'pill-clear';
     clr.textContent = 'Clear';
-    clr.style.cssText = 'padding:6px 10px;border:none;background:none;color:#7A828C;font-family:Figtree,sans-serif;font-size:11px;text-decoration:underline;cursor:pointer;opacity:0;transition:opacity .25s ease;';
+    clr.style.cssText = 'padding:6px 10px;border:none;background:none;color:#7A828C;font-family:Figtree,sans-serif;font-size:14px;text-decoration:underline;cursor:pointer;opacity:0;transition:opacity .25s ease;';
     clr.addEventListener('click', () => { this.highlight = null; this.applyHighlight(); this.renderMap(); this.renderStateBars(); });
     wrap.appendChild(clr);
   }
@@ -353,9 +389,9 @@ class Component extends DCLogic {
       el.setAttribute('data-adv', r.name);
       el.style.cssText = 'text-align:left;border:none;cursor:pointer;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);padding:18px 20px;display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;font-family:Figtree,sans-serif;';
       el.innerHTML =
-        '<span style="font-family:Figtree,sans-serif;font-size:11px;font-weight:700;color:' + C[r.name] + ';">0' + r.rank + '</span>' +
+        '<span style="font-family:Figtree,sans-serif;font-size:14px;font-weight:700;color:' + C[r.name] + ';">0' + r.rank + '</span>' +
         '<span><span style="display:block;font-size:15px;font-weight:700;color:' + INK + ';letter-spacing:-0.01em;">' + r.name + '</span>' +
-        '<span style="display:block;font-family:Figtree,sans-serif;font-size:11px;color:' + MUTED + ';margin-top:3px;">' + this.fmt(r.ads) + ' ads · ' + r.per.toFixed(1) + ' impressions / $</span></span>' +
+        '<span style="display:block;font-family:Figtree,sans-serif;font-size:14px;color:' + MUTED + ';margin-top:3px;">' + this.fmt(r.ads) + ' ads · ' + r.per.toFixed(1) + ' impressions / $</span></span>' +
         '<span style="font-family:Figtree,sans-serif;font-size:17px;font-weight:700;color:' + INK + ';">' + this.money(r.spend) + '</span>';
       el.addEventListener('click', () => this.setHighlight(r.name));
       wrap.appendChild(el);
@@ -372,7 +408,7 @@ class Component extends DCLogic {
       el.setAttribute('data-adv', a.name);
       el.style.cssText = 'text-align:left;cursor:pointer;background:#FFFFFF;border:1px solid rgba(10,12,16,.09);border-radius:12px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;font-family:Figtree,sans-serif;color:' + INK + ';';
       el.innerHTML = '<span style="display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600;"><span style="width:8px;height:8px;border-radius:50%;background:' + C[a.name] + ';"></span>' + a.name + '</span>' +
-        '<span style="font-family:Figtree,sans-serif;font-size:12.5px;color:#4B5158;white-space:nowrap;">$' + a.median_cost_per_1k.toFixed(0) + ' / 1k impr.' + (pct >= 1 ? ' <span style="color:' + C[a.name] + ';font-weight:700;">+' + pct.toFixed(0) + '% value</span>' : ' <span style="color:' + MUTED + ';">baseline</span>') + '</span>';
+        '<span style="font-family:Figtree,sans-serif;font-size:14px;color:#4B5158;white-space:nowrap;">$' + a.median_cost_per_1k.toFixed(0) + ' / 1k impr.' + (pct >= 1 ? ' <span style="color:' + C[a.name] + ';font-weight:700;">+' + pct.toFixed(0) + '% value</span>' : ' <span style="color:' + MUTED + ';">baseline</span>') + '</span>';
       el.addEventListener('click', () => this.setHighlight(a.name));
       wrap.appendChild(el);
     });
@@ -385,13 +421,34 @@ class Component extends DCLogic {
       pcts[byVal[1].name].toFixed(0) + '%</b> more. Rates are each advertiser\u2019s own per-ad spend divided by its estimated impressions.';
   }
 
+  buildAdLibraryLinks() {
+    const wrap = this.q('adlib-links');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    NAMES.forEach(name => {
+      const a = document.createElement('a');
+      a.href = AD_LIBRARY[name];
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.setAttribute('data-adv', name);
+      a.setAttribute('aria-label', name + ' — view ad campaigns on the Meta Ad Library (opens in a new tab)');
+      a.style.cssText = 'display:flex; align-items:center; gap:14px; padding:10px 8px; border-radius:12px; text-decoration:none; color:' + INK + '; transition:background .2s ease; outline-offset:2px;';
+      a.innerHTML =
+        '<span style="flex:0 0 auto; width:44px; height:44px; border-radius:50%; background:' + C[name] + '; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font-family:Figtree,sans-serif; font-size:16px; font-weight:800;">' + name.charAt(0) + '</span>' +
+        '<span style="font-size:16px; font-weight:700; letter-spacing:-0.01em; text-decoration:underline; text-decoration-color:rgba(10,12,16,.25); text-underline-offset:3px;">' + name + '</span>';
+      a.addEventListener('mouseenter', () => { a.style.background = 'rgba(10,12,16,.04)'; });
+      a.addEventListener('mouseleave', () => { a.style.background = 'transparent'; });
+      wrap.appendChild(a);
+    });
+  }
+
   /* ---------- benchmark ---------- */
   renderBenchmark() {
     const el = this.q('chart-benchmark');
     el.innerHTML = '';
     const hist = this.D.spend_benchmark.histogram;
-    const w = el.clientWidth || 640, h = 190;
-    const m = { top: 14, right: 8, bottom: 30, left: 42 };
+    const w = el.clientWidth || 640, h = 200;
+    const m = { top: 16, right: 8, bottom: 34, left: 48 };
     const svg = d3.select(el).append('svg').attr('viewBox', '0 0 ' + w + ' ' + h).attr('width', '100%')
       .attr('role', 'img').attr('aria-label', 'Histogram of reported spend across 14,071 advertisers');
     const x = d3.scaleLog().domain([hist.edges[0], hist.edges[hist.edges.length - 1]]).range([m.left, w - m.right]);
@@ -399,7 +456,7 @@ class Component extends DCLogic {
 
     svg.append('g').attr('transform', 'translate(' + m.left + ',0)')
       .call(d3.axisLeft(y).ticks(4).tickFormat(d3.format('~s')))
-      .call(g => { g.select('.domain').remove(); g.selectAll('line').attr('stroke', 'rgba(10,12,16,.08)').attr('x2', w - m.left - m.right); g.selectAll('text').attr('fill', MUTED).style('font-family', 'Figtree,sans-serif').style('font-size', '10px'); });
+      .call(g => { g.select('.domain').remove(); g.selectAll('line').attr('stroke', 'rgba(10,12,16,.08)').attr('x2', w - m.left - m.right); g.selectAll('text').attr('fill', MUTED).style('font-family', 'Figtree,sans-serif').style('font-size', '14px'); });
 
     svg.append('g').selectAll('rect').data(hist.counts).join('rect')
       .attr('x', (d, i) => x(hist.edges[i]))
@@ -419,7 +476,7 @@ class Component extends DCLogic {
 
     svg.append('g').attr('transform', 'translate(0,' + (h - m.bottom) + ')')
       .call(d3.axisBottom(x).ticks(5, '~s').tickFormat(d => '$' + d3.format('~s')(d)))
-      .call(g => { g.select('.domain').attr('stroke', LINE); g.selectAll('line').attr('stroke', LINE); g.selectAll('text').attr('fill', MUTED).style('font-family', 'Figtree,sans-serif').style('font-size', '10px'); });
+      .call(g => { g.select('.domain').attr('stroke', LINE); g.selectAll('line').attr('stroke', LINE); g.selectAll('text').attr('fill', MUTED).style('font-family', 'Figtree,sans-serif').style('font-size', '14px'); });
   }
 
   /* ---------- top 10 ---------- */
@@ -428,8 +485,8 @@ class Component extends DCLogic {
     el.innerHTML = '';
     const data = this.D.topSpenders.slice(0, 10);
     const w = el.clientWidth || 900;
-    const rowH = w < 620 ? 34 : 40;
-    const m = { top: 8, right: 82, bottom: 8, left: w < 620 ? 130 : 190 };
+    const rowH = w < 620 ? 42 : 48;
+    const m = { top: 8, right: 88, bottom: 8, left: w < 620 ? 148 : 200 };
     const h = data.length * rowH + m.top + m.bottom;
     const svg = d3.select(el).append('svg').attr('viewBox', '0 0 ' + w + ' ' + h).attr('width', '100%')
       .attr('role', 'img').attr('aria-label', 'Top 10 advertisers by reported spend');
@@ -452,7 +509,7 @@ class Component extends DCLogic {
       .attr('width', 0).attr('fill', d => d.highlight ? C[d.name] : NEUTRAL);
     rows.append('text').attr('class', 'sval').attr('x', m.left + 8).attr('y', rowH / 2).attr('dy', '0.34em')
       .attr('fill', d => d.highlight ? INK : MUTED).style('font-family', 'Figtree,sans-serif')
-      .style('font-size', '12px').style('font-weight', d => d.highlight ? 700 : 500).attr('opacity', 0)
+      .style('font-size', '14px').style('font-weight', d => d.highlight ? 700 : 500).attr('opacity', 0)
       .text(d => this.money(d.spend));
 
     const animate = () => {
@@ -461,8 +518,7 @@ class Component extends DCLogic {
       rows.selectAll('text.sval').transition().duration(400).delay((d, i, n) => this.reduced ? 0 : 500 + data.indexOf(d3.select(n[i]).datum()) * 40)
         .attr('opacity', 1).attr('x', d => x(d.spend) + 8);
     };
-    if (window.ScrollTrigger) ScrollTrigger.create({ trigger: el, start: 'top 85%', once: true, onEnter: animate });
-    else animate();
+    animate();
   }
 
   /* ---------- slopegraph ---------- */
@@ -480,7 +536,7 @@ class Component extends DCLogic {
 
     [[lx, 'Spend'], [rx, 'Impressions / $']].forEach(([px, label]) => {
       svg.append('text').attr('x', px).attr('y', 20).attr('text-anchor', 'middle').attr('fill', MUTED)
-        .style('font-family', 'Figtree,sans-serif').style('font-size', '10.5px').style('letter-spacing', '.1em')
+        .style('font-family', 'Figtree,sans-serif').style('font-size', '14px').style('letter-spacing', '.1em')
         .text(label.toUpperCase());
       svg.append('line').attr('x1', px).attr('x2', px).attr('y1', 32).attr('y2', h - 20).attr('stroke', 'rgba(10,12,16,.09)');
     });
@@ -506,24 +562,24 @@ class Component extends DCLogic {
       const leftDot = g.append('g');
       leftDot.append('circle').attr('cx', lx).attr('cy', y1).attr('r', 15).attr('fill', C[name]);
       leftDot.append('text').attr('x', lx).attr('y', y1).attr('dy', '0.35em').attr('text-anchor', 'middle')
-        .attr('fill', '#FFFFFF').style('font-family', 'Figtree,sans-serif').style('font-size', '12px').style('font-weight', '700')
+        .attr('fill', '#FFFFFF').style('font-family', 'Figtree,sans-serif').style('font-size', '14px').style('font-weight', '700')
         .text(bySpend.findIndex(d => d.name === name) + 1);
       const leftLab = g.append('g');
       leftLab.append('text').attr('x', lx).attr('y', y1 + 33).attr('text-anchor', 'middle').attr('fill', INK)
-        .style('font-family', 'Figtree,sans-serif').style('font-size', '12.5px').style('font-weight', '700').text(name);
+        .style('font-family', 'Figtree,sans-serif').style('font-size', '14px').style('font-weight', '700').text(name);
       leftLab.append('text').attr('x', lx).attr('y', y1 + 49).attr('text-anchor', 'middle').attr('fill', MUTED)
-        .style('font-family', 'Figtree,sans-serif').style('font-size', '11px').text('$' + d3.format('.3s')(a.total_spend_peradfile));
+        .style('font-family', 'Figtree,sans-serif').style('font-size', '14px').text('$' + d3.format('.3s')(a.total_spend_peradfile));
 
       const rightDot = g.append('g');
       rightDot.append('circle').attr('cx', rx).attr('cy', y2).attr('r', 15).attr('fill', C[name]);
       rightDot.append('text').attr('x', rx).attr('y', y2).attr('dy', '0.35em').attr('text-anchor', 'middle')
-        .attr('fill', '#FFFFFF').style('font-family', 'Figtree,sans-serif').style('font-size', '12px').style('font-weight', '700')
+        .attr('fill', '#FFFFFF').style('font-family', 'Figtree,sans-serif').style('font-size', '14px').style('font-weight', '700')
         .text(byValue.findIndex(d => d.name === name) + 1);
       const rightLab = g.append('g');
       rightLab.append('text').attr('x', rx).attr('y', y2 + 33).attr('text-anchor', 'middle').attr('fill', INK)
-        .style('font-family', 'Figtree,sans-serif').style('font-size', '12.5px').style('font-weight', '700').text(a.imp_per_dollar.toFixed(1) + ' / $');
+        .style('font-family', 'Figtree,sans-serif').style('font-size', '14px').style('font-weight', '700').text(a.imp_per_dollar.toFixed(1) + ' / $');
       rightLab.append('text').attr('x', rx).attr('y', y2 + 49).attr('text-anchor', 'middle').attr('fill', MUTED)
-        .style('font-family', 'Figtree,sans-serif').style('font-size', '11px').text(d3.format('.3s')(a.total_impressions) + ' impr.');
+        .style('font-family', 'Figtree,sans-serif').style('font-size', '14px').text(d3.format('.3s')(a.total_impressions) + ' impr.');
 
       const trav = g.append('circle').attr('r', 5.5).attr('fill', C[name]).attr('opacity', 0)
         .attr('cx', lx + 15).attr('cy', y1);
@@ -542,7 +598,7 @@ class Component extends DCLogic {
         parts.forEach(p => { p.path.attr('stroke-dashoffset', 0); p.leftDot.attr('opacity', 1); p.leftLab.attr('opacity', 1); p.rightDot.attr('opacity', 1); p.rightLab.attr('opacity', 1); });
         return;
       }
-      const dur = 950, stagger = 620;
+      const dur = 1700, stagger = 950;
       parts.forEach((p, i) => {
         const t0 = i * stagger;
         p.leftDot.transition().delay(t0).duration(260).attr('opacity', 1);
@@ -565,8 +621,7 @@ class Component extends DCLogic {
       });
     };
 
-    if (window.ScrollTrigger) ScrollTrigger.create({ trigger: el, start: 'top 80%', once: true, onEnter: play });
-    else play();
+    play();
   }
 
   /* ---------- map ---------- */
@@ -579,11 +634,11 @@ class Component extends DCLogic {
   renderMap() {
     const wrap = this.q('us-map-wrap');
     if (!window.US_TOPO) {
-      if (!wrap.innerHTML) wrap.innerHTML = '<div style="height:260px;display:flex;align-items:center;justify-content:center;font-family:Figtree,sans-serif;font-size:11px;letter-spacing:.1em;color:' + FAINT + ';animation:advPulse 1.6s ease-in-out infinite;">LOADING STATE GEOMETRY…</div>';
+      if (!wrap.innerHTML) wrap.innerHTML = '<div style="height:260px;display:flex;align-items:center;justify-content:center;font-family:Figtree,sans-serif;font-size:14px;letter-spacing:.1em;color:' + FAINT + ';animation:advPulse 1.6s ease-in-out infinite;">LOADING STATE GEOMETRY…</div>';
       if (!this._topoReq) {
         this._topoReq = d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json')
           .then(t => { window.US_TOPO = t; this.renderMap(); })
-          .catch(() => { wrap.innerHTML = '<div style="height:200px;display:flex;align-items:center;justify-content:center;font-family:Figtree,sans-serif;font-size:11px;color:' + FAINT + ';">Map data unavailable offline — state rankings shown at right.</div>'; });
+          .catch(() => { wrap.innerHTML = '<div style="height:200px;display:flex;align-items:center;justify-content:center;font-family:Figtree,sans-serif;font-size:14px;color:' + FAINT + ';">Map data unavailable offline — state rankings shown at right.</div>'; });
       }
       return;
     }
@@ -612,7 +667,7 @@ class Component extends DCLogic {
       .style('cursor', 'pointer')
       .on('mousemove', (e, d) => {
         const rows = NAMES.map(n => '<span style="display:flex;justify-content:space-between;gap:12px;"><span style="color:' + C[n] + '">' + n + '</span><span>' + this.fmtStateVal(this.stateValue(n, d.state)) + '</span></span>').join('');
-        this.tip('<b>' + d.state + '</b><div style="margin-top:5px;display:grid;gap:2px;font-family:Figtree,sans-serif;font-size:11px;">' + rows + '</div>', e);
+        this.tip('<b>' + d.state + '</b><div style="margin-top:5px;display:grid;gap:2px;font-family:Figtree,sans-serif;font-size:14px;">' + rows + '</div>', e);
       })
       .on('mouseleave', () => this.untip())
       .on('click', (e, d) => { this.selectedState = this.selectedState === d.state ? null : d.state; this.renderMap(); this.renderStateBars(); });
@@ -620,13 +675,13 @@ class Component extends DCLogic {
     const key = this.q('map-scale');
     key.innerHTML = '';
     const kw = 200;
-    const ksvg = d3.select(key).append('svg').attr('width', kw + 230).attr('height', 30);
+    const ksvg = d3.select(key).append('svg').attr('viewBox', '0 0 ' + (kw + 260) + ' 34').attr('width', Math.min(kw + 260, key.clientWidth || 460)).attr('height', 34);
     const grad = ksvg.append('defs').append('linearGradient').attr('id', 'map-grad-' + (focus || 'all').replace(/\W/g, ''));
     d3.range(0, 1.01, 0.1).forEach(t => grad.append('stop').attr('offset', (t * 100) + '%').attr('stop-color', scale(Math.pow(max * t, 0.75))));
-    ksvg.append('rect').attr('x', 0).attr('y', 8).attr('width', kw).attr('height', 7).attr('rx', 3).attr('fill', 'url(#' + grad.attr('id') + ')').attr('stroke', LINE);
-    ksvg.append('text').attr('x', 0).attr('y', 27).attr('fill', FAINT).style('font-family', 'Figtree,sans-serif').style('font-size', '9.5px').text('$0');
-    ksvg.append('text').attr('x', kw).attr('y', 27).attr('text-anchor', 'end').attr('fill', FAINT).style('font-family', 'Figtree,sans-serif').style('font-size', '9.5px').text(this.money(max));
-    ksvg.append('text').attr('x', kw + 12).attr('y', 14).attr('fill', '#4B5158').style('font-family', 'Figtree,sans-serif').style('font-size', '11px').text(focus || 'All three combined');
+    ksvg.append('rect').attr('x', 0).attr('y', 12).attr('width', kw).attr('height', 8).attr('rx', 3).attr('fill', 'url(#' + grad.attr('id') + ')').attr('stroke', LINE);
+    ksvg.append('text').attr('x', 0).attr('y', 32).attr('fill', FAINT).style('font-family', 'Figtree,sans-serif').style('font-size', '14px').text('$0');
+    ksvg.append('text').attr('x', kw).attr('y', 32).attr('text-anchor', 'end').attr('fill', FAINT).style('font-family', 'Figtree,sans-serif').style('font-size', '14px').text(this.money(max));
+    ksvg.append('text').attr('x', kw + 14).attr('y', 20).attr('fill', '#4B5158').style('font-family', 'Figtree,sans-serif').style('font-size', '14px').text(focus || 'All three combined');
   }
 
   fmtStateVal(v) { return '$' + this.fmt(v || 0); }
@@ -657,12 +712,12 @@ class Component extends DCLogic {
       const card = document.createElement('div');
       card.setAttribute('data-adv', name);
       card.style.cssText = 'border-top:1px solid ' + C[name] + ';padding-top:9px;cursor:pointer;';
-      card.innerHTML = '<div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:' + INK + ';margin-bottom:6px;"><span style="width:7px;height:7px;border-radius:50%;background:' + C[name] + ';"></span>' + name + '</div>';
+      card.innerHTML = '<div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:' + INK + ';margin-bottom:6px;"><span style="width:7px;height:7px;border-radius:50%;background:' + C[name] + ';"></span>' + name + '</div>';
       card.addEventListener('click', e => { if (e.target === card || e.target.parentElement === card) this.setHighlight(name); });
       wrap.appendChild(card);
 
-      const w = Math.max(320, card.clientWidth || 420), rowH = 20;
-      const m = { left: Math.min(150, w * 0.28), right: Math.min(96, w * 0.19) };
+      const w = Math.max(320, card.clientWidth || 420), rowH = 27;
+      const m = { left: Math.min(170, w * 0.33), right: Math.min(104, w * 0.21) };
       const svg = d3.select(card).append('svg').attr('viewBox', '0 0 ' + w + ' ' + (rows.length * rowH))
         .attr('style', 'width:100%;height:' + (rows.length * rowH) + 'px;display:block;');
       const x = d3.scaleLinear().domain([0, d3.max(rows, val) || 1]).range([m.left, w - m.right]);
@@ -670,16 +725,16 @@ class Component extends DCLogic {
         .on('click', (e, d) => { this.selectedState = this.normState(d.state); this.renderMap(); this.renderStateBars(); })
         .on('mousemove', (e, d) => this.tip('<b style="color:' + C[name] + '">' + name + '</b><br>' + this.normState(d.state) + ': ' + this.fmtStateVal(val(d)), e))
         .on('mouseleave', () => this.untip());
-      g.append('text').attr('x', m.left - 9).attr('y', 14).attr('text-anchor', 'end')
+      g.append('text').attr('x', m.left - 9).attr('y', rowH / 2).attr('dy', '0.34em').attr('text-anchor', 'end')
         .attr('fill', d => this.normState(d.state) === this.selectedState ? INK : '#4B5158')
-        .style('font-family', 'Figtree,sans-serif').style('font-size', '11.5px')
+        .style('font-family', 'Figtree,sans-serif').style('font-size', '14px')
         .style('font-weight', d => this.normState(d.state) === this.selectedState ? 700 : 400)
         .text(d => this.normState(d.state));
-      g.append('rect').attr('x', m.left).attr('y', 3).attr('height', 12).attr('rx', 2)
+      g.append('rect').attr('x', m.left).attr('y', rowH / 2 - 7).attr('height', 14).attr('rx', 3)
         .attr('width', d => Math.max(2, x(val(d)) - m.left)).attr('fill', C[name])
         .attr('opacity', d => this.normState(d.state) === this.selectedState || !this.selectedState ? 0.9 : 0.4);
-      g.append('text').attr('x', d => x(val(d)) + 7).attr('y', 14).attr('fill', MUTED)
-        .style('font-family', 'Figtree,sans-serif').style('font-size', '10.5px').text(d => this.fmtStateVal(val(d)));
+      g.append('text').attr('x', d => x(val(d)) + 7).attr('y', rowH / 2).attr('dy', '0.34em').attr('fill', MUTED)
+        .style('font-family', 'Figtree,sans-serif').style('font-size', '14px').text(d => this.fmtStateVal(val(d)));
     });
     this.applyHighlight();
   }
@@ -704,7 +759,7 @@ class Component extends DCLogic {
     const value = (n, age, g) => ((lookup[n][age + '|' + g] || 0) / total[n]) * 100;
 
     const w = el.clientWidth || 900;
-    const rowH = w < 640 ? 54 : 62, center = w < 640 ? 62 : 92;
+    const rowH = w < 640 ? 58 : 66, center = w < 640 ? 84 : 104;
     const m = { top: 26, bottom: 42 };
     const h = ages.length * rowH + m.top + m.bottom;
     const half = (w - center) / 2;
@@ -720,9 +775,9 @@ class Component extends DCLogic {
     const axisY = m.top + ages.length * rowH;
 
     svg.append('text').attr('x', half - 8).attr('y', 14).attr('text-anchor', 'end').attr('fill', MUTED)
-      .style('font-family', 'Figtree,sans-serif').style('font-size', '10px').style('letter-spacing', '.12em').text('MEN');
+      .style('font-family', 'Figtree,sans-serif').style('font-size', '14px').style('letter-spacing', '.12em').text('MEN');
     svg.append('text').attr('x', cx + center / 2).attr('y', 14).attr('fill', MUTED)
-      .style('font-family', 'Figtree,sans-serif').style('font-size', '10px').style('letter-spacing', '.12em').text('WOMEN');
+      .style('font-family', 'Figtree,sans-serif').style('font-size', '14px').style('letter-spacing', '.12em').text('WOMEN');
 
     const ticks = x.ticks(Math.min(6, Math.round(max / 5)));
     [[-1, cx - center / 2], [1, cx + center / 2]].forEach(([sign, anchor]) => {
@@ -732,17 +787,17 @@ class Component extends DCLogic {
         g.append('line').attr('x1', px).attr('x2', px).attr('y1', m.top - 6).attr('y2', axisY)
           .attr('stroke', t === 0 ? 'rgba(10,12,16,.18)' : 'rgba(10,12,16,.06)');
         g.append('text').attr('x', px).attr('y', axisY + 16).attr('text-anchor', 'middle').attr('fill', MUTED)
-          .style('font-family', 'Figtree,sans-serif').style('font-size', '10px').text(t + '%');
+          .style('font-family', 'Figtree,sans-serif').style('font-size', '14px').text(t + '%');
       });
       g.append('line').attr('x1', anchor).attr('x2', anchor + sign * x(max)).attr('y1', axisY).attr('y2', axisY).attr('stroke', LINE);
     });
     svg.append('text').attr('x', cx).attr('y', axisY + 34).attr('text-anchor', 'middle').attr('fill', MUTED)
-      .style('font-family', 'Figtree,sans-serif').style('font-size', '10.5px').style('letter-spacing', '.08em')
+      .style('font-family', 'Figtree,sans-serif').style('font-size', '14px').style('letter-spacing', '.08em')
       .text('SHARE OF ADVERTISER\u2019S OWN REACH (%)');
 
     svg.selectAll('text.age').data(ages).join('text').attr('class', 'age')
       .attr('x', cx).attr('y', d => y(d) + y.bandwidth() / 2).attr('dy', '0.34em').attr('text-anchor', 'middle')
-      .attr('fill', '#4B5158').style('font-family', 'Figtree,sans-serif').style('font-size', '11.5px').style('font-weight', '600').text(d => d);
+      .attr('fill', '#4B5158').style('font-family', 'Figtree,sans-serif').style('font-size', '14px').style('font-weight', '600').text(d => d);
 
     svg.selectAll('line.sep').data(ages).join('line').attr('class', 'sep')
       .attr('x1', 0).attr('x2', w)
@@ -795,43 +850,48 @@ class Component extends DCLogic {
     const value = (n, age, g) => ((lookup[n][age + '|' + g] || 0) / total[n]) * 100;
 
     const w = el.clientWidth || 900;
-    const rowH = 22, blockGap = 8;
+    const rowH = 34, blockGap = 14;
     const blockH = 3 * rowH + blockGap;
-    const m = { top: 34, bottom: 42, left: w < 640 ? 58 : 78, right: 16 };
+    const m = { top: 52, bottom: 46, left: w < 640 ? 66 : 86, right: 22 };
     const h = m.top + ages.length * blockH + m.bottom;
     const axisW = w - m.left - m.right;
+    const R = 8, S = 15; // marker sizes: male circle radius, female square side
 
     const svg = d3.select(el).append('svg').attr('viewBox', '0 0 ' + w + ' ' + h).attr('width', '100%')
-      .attr('role', 'img').attr('aria-label', 'Dumbbell chart comparing male and female reach share by age group, across three advertisers');
+      .attr('role', 'img').attr('aria-label', 'Dumbbell chart comparing male and female reach share by age group, across three advertisers. Circles mark male reach, squares mark female reach.');
 
     const rawMax = d3.max(NAMES, n => d3.max(ages, a => Math.max(value(n, a, 'male'), value(n, a, 'female')))) || 1;
     const max = Math.ceil(rawMax / 5) * 5;
     const x = d3.scaleLinear().domain([0, max]).range([0, axisW]);
     const axisBottom = m.top + ages.length * blockH + 6;
 
-    svg.append('rect').attr('x', m.left).attr('y', 4).attr('width', 8).attr('height', 8).attr('rx', 1).attr('fill', MUTED);
-    svg.append('text').attr('x', m.left + 13).attr('y', 12).attr('fill', MUTED)
-      .style('font-family', 'Figtree,sans-serif').style('font-size', '10.5px').style('letter-spacing', '.04em').text('MALE');
-    svg.append('circle').attr('cx', m.left + 66).attr('cy', 8).attr('r', 4.5).attr('fill', MUTED);
-    svg.append('text').attr('x', m.left + 76).attr('y', 12).attr('fill', MUTED)
-      .style('font-family', 'Figtree,sans-serif').style('font-size', '10.5px').style('letter-spacing', '.04em').text('FEMALE');
+    /* -- direct legend: shape encodes gender, unambiguous at a glance -- */
+    const legend = svg.append('g');
+    legend.append('circle').attr('cx', m.left + R).attr('cy', 10).attr('r', R).attr('fill', 'none').attr('stroke', MUTED).attr('stroke-width', 2);
+    legend.append('text').attr('x', m.left + R * 2 + 10).attr('y', 15).attr('fill', INK)
+      .style('font-family', 'Figtree,sans-serif').style('font-size', '15px').style('font-weight', '700').text('\u25CF Male');
+    legend.append('rect').attr('x', m.left + 108).attr('y', 10 - S / 2).attr('width', S).attr('height', S).attr('rx', 3).attr('fill', 'none').attr('stroke', MUTED).attr('stroke-width', 2);
+    legend.append('text').attr('x', m.left + 108 + S + 10).attr('y', 15).attr('fill', INK)
+      .style('font-family', 'Figtree,sans-serif').style('font-size', '15px').style('font-weight', '700').text('\u25A0 Female');
+    svg.append('text').attr('x', w - m.right).attr('y', 15).attr('text-anchor', 'end').attr('fill', MUTED)
+      .style('font-family', 'Figtree,sans-serif').style('font-size', '14px').text('Line length = gap between them');
 
     const ticks = x.ticks(Math.min(6, Math.round(max / 5)));
     ticks.forEach(t => {
       const px = m.left + x(t);
       svg.append('line').attr('x1', px).attr('x2', px).attr('y1', m.top - 6).attr('y2', axisBottom)
         .attr('stroke', t === 0 ? 'rgba(10,12,16,.18)' : 'rgba(10,12,16,.06)');
-      svg.append('text').attr('x', px).attr('y', axisBottom + 16).attr('text-anchor', 'middle').attr('fill', MUTED)
-        .style('font-family', 'Figtree,sans-serif').style('font-size', '10px').text(t + '%');
+      svg.append('text').attr('x', px).attr('y', axisBottom + 18).attr('text-anchor', 'middle').attr('fill', MUTED)
+        .style('font-family', 'Figtree,sans-serif').style('font-size', '14px').text(t + '%');
     });
-    svg.append('text').attr('x', m.left + axisW / 2).attr('y', axisBottom + 34).attr('text-anchor', 'middle').attr('fill', MUTED)
-      .style('font-family', 'Figtree,sans-serif').style('font-size', '10.5px').style('letter-spacing', '.08em')
+    svg.append('text').attr('x', m.left + axisW / 2).attr('y', axisBottom + 38).attr('text-anchor', 'middle').attr('fill', MUTED)
+      .style('font-family', 'Figtree,sans-serif').style('font-size', '14px').style('letter-spacing', '.06em')
       .text('SHARE OF ADVERTISER\u2019S OWN REACH (%)');
 
     ages.forEach((age, ai) => {
       const blockTop = m.top + ai * blockH;
-      svg.append('text').attr('x', m.left - 12).attr('y', blockTop + (3 * rowH) / 2).attr('dy', '0.32em').attr('text-anchor', 'end')
-        .attr('fill', '#4B5158').style('font-family', 'Figtree,sans-serif').style('font-size', '11.5px').style('font-weight', '600').text(age);
+      svg.append('text').attr('x', m.left - 14).attr('y', blockTop + (3 * rowH) / 2).attr('dy', '0.32em').attr('text-anchor', 'end')
+        .attr('fill', '#4B5158').style('font-family', 'Figtree,sans-serif').style('font-size', '15px').style('font-weight', '700').text(age);
       NAMES.forEach((n, ni) => {
         const cy = blockTop + ni * rowH + rowH / 2;
         const mVal = value(n, age, 'male'), fVal = value(n, age, 'female');
@@ -839,12 +899,15 @@ class Component extends DCLogic {
         const g = svg.append('g').attr('data-adv', n).style('cursor', 'pointer');
         g.node().dataset.baseOpacity = '1';
         const line = g.append('line').attr('x1', x1).attr('y1', cy).attr('x2', x1).attr('y2', cy)
-          .attr('stroke', C[n]).attr('stroke-width', 2).attr('stroke-linecap', 'round');
+          .attr('stroke', C[n]).attr('stroke-width', 3.5).attr('stroke-linecap', 'round');
         line.transition().duration(this.reduced ? 0 : 600).ease(d3.easeCubicOut).attr('x2', x2);
-        g.append('rect').attr('x', x1 - 4).attr('y', cy - 4).attr('width', 8).attr('height', 8).attr('rx', 1).attr('fill', C[n]);
-        g.append('circle').attr('cx', x2).attr('cy', cy).attr('r', 4.5).attr('fill', C[n]);
+        // Male = circle
+        g.append('circle').attr('cx', x1).attr('cy', cy).attr('r', R).attr('fill', C[n]).attr('stroke', '#FFFFFF').attr('stroke-width', 1.5);
+        // Female = square
+        g.append('rect').attr('x', x2 - S / 2).attr('y', cy - S / 2).attr('width', S).attr('height', S).attr('rx', 3)
+          .attr('fill', C[n]).attr('stroke', '#FFFFFF').attr('stroke-width', 1.5);
         g.on('mousemove', e => this.tip('<b style="color:' + C[n] + '">' + n + '</b><br>' + age +
-            '<br>Male: ' + mVal.toFixed(1) + '% of own reach<br>Female: ' + fVal.toFixed(1) + '% of own reach', e))
+            '<br>\u25CF Male: ' + mVal.toFixed(1) + '% of own reach<br>\u25A0 Female: ' + fVal.toFixed(1) + '% of own reach', e))
           .on('mouseleave', () => this.untip())
           .on('click', () => this.setHighlight(n));
       });
@@ -906,13 +969,13 @@ class Component extends DCLogic {
       row.setAttribute('data-adv', a.name);
       row.style.cssText = 'text-align:left;cursor:pointer;background:#FFFFFF;border:1px solid rgba(10,12,16,.09);border-radius:14px;padding:15px 18px;display:grid;gap:9px;font-family:Figtree,sans-serif;';
       row.innerHTML = '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">' +
-        '<span style="display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:' + INK + ';"><span style="width:7px;height:7px;border-radius:50%;background:' + C[a.name] + ';"></span>' + a.name + '</span>' +
+        '<span style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:' + INK + ';"><span style="width:7px;height:7px;border-radius:50%;background:' + C[a.name] + ';"></span>' + a.name + '</span>' +
         '<span class="cnum" style="font-family:Figtree,sans-serif;font-size:19px;font-weight:700;color:' + C[a.name] + ';">0</span></div>' +
-        '<div style="height:4px;border-radius:2px;background:rgba(10,12,16,.07);overflow:hidden;"><div style="height:100%;width:' + (a.imp_per_dollar / maxRate * 100) + '%;background:' + C[a.name] + ';border-radius:2px;"></div></div>' +
-        '<div style="font-family:Figtree,sans-serif;font-size:10.5px;color:' + FAINT + ';">' + a.imp_per_dollar.toFixed(1) + ' impressions per dollar · $' + a.median_cost_per_1k.toFixed(0) + ' per 1k</div>';
+        '<div style="height:4px;border-radius:2px;background:rgba(10,12,16,.07);overflow:hidden;"><div class="cbar" style="height:100%;width:0%;background:' + C[a.name] + ';border-radius:2px;transition:width .15s ease;"></div></div>' +
+        '<div style="font-family:Figtree,sans-serif;font-size:14px;color:' + FAINT + ';">' + a.imp_per_dollar.toFixed(1) + ' impressions per dollar · $' + a.median_cost_per_1k.toFixed(0) + ' per 1k</div>';
       row.addEventListener('click', () => this.setHighlight(a.name));
       results.appendChild(row);
-      nodes[a.name] = row.querySelector('.cnum');
+      nodes[a.name] = { num: row.querySelector('.cnum'), bar: row.querySelector('.cbar'), ratio: a.imp_per_dollar / maxRate };
     });
 
     let t = 0.5;
@@ -922,7 +985,11 @@ class Component extends DCLogic {
       fill.style.width = (t * 100) + '%';
       thumb.style.left = (t * 100) + '%';
       track.setAttribute('aria-valuetext', '$' + this.fmt(amt));
-      byVal.forEach(a => { nodes[a.name].textContent = this.fmt(amt * a.imp_per_dollar); });
+      byVal.forEach(a => {
+        const n = nodes[a.name];
+        n.num.textContent = this.fmt(amt * a.imp_per_dollar);
+        n.bar.style.width = (t * n.ratio * 100) + '%';
+      });
     };
     const setFromX = clientX => {
       const r = track.getBoundingClientRect();
@@ -1020,17 +1087,92 @@ class Component extends DCLogic {
     tick();
   }
 
-  /* ---------- scroll ---------- */
-  initScroll() {
-    if (!window.gsap || !window.ScrollTrigger) return;
-    gsap.registerPlugin(ScrollTrigger);
-    if (this.reduced) return;
-    document.querySelectorAll('[data-reveal]').forEach(el => {
-      gsap.fromTo(el, { y: 34, opacity: 0 }, {
-        y: 0, opacity: 1, duration: 0.9, ease: 'power3.out',
-        scrollTrigger: { trigger: el, start: 'top 88%', once: true }
+  /* ---------- floating page navigation ---------- */
+  initChapterNav() {
+    const labelsWrap = this.q('chapter-labels');
+    const prevBtn = this.q('chapter-prev');
+    const nextBtn = this.q('chapter-next');
+    if (!labelsWrap || !prevBtn || !nextBtn) return;
+
+    this.currentNav = 0; // index into NAV_ITEMS
+    const pageEls = {};
+    PAGE_IDS.forEach(id => { pageEls[id] = this.q(id); });
+
+    const applyPageClasses = (activePageId) => {
+      const activeIdx = PAGE_IDS.indexOf(activePageId);
+      PAGE_IDS.forEach((id, i) => {
+        const el = pageEls[id];
+        if (!el) return;
+        el.classList.remove('is-active', 'is-before');
+        if (i === activeIdx) el.classList.add('is-active');
+        else if (i < activeIdx) el.classList.add('is-before');
       });
+    };
+
+    const renderLabels = () => {
+      labelsWrap.innerHTML = '';
+      const i = this.currentNav;
+      const narrow = window.innerWidth < 640;
+      const slots = narrow ? [i] : [i - 1, i, i + 1].filter(k => k >= 0 && k < NAV_ITEMS.length);
+      slots.forEach(k => {
+        const isCurrent = k === i;
+        const btn = document.createElement('button');
+        btn.textContent = NAV_ITEMS[k].short;
+        btn.setAttribute('aria-current', isCurrent ? 'true' : 'false');
+        btn.style.cssText = 'border:none; background:none; cursor:pointer; font-family:Figtree,sans-serif; font-size:' + (isCurrent ? '15px' : '14px') + '; font-weight:' + (isCurrent ? '800' : '500') + '; color:' + (isCurrent ? '#0A0C10' : '#8B929B') + '; padding:6px 4px; border-radius:8px; transition:color .2s ease, background .2s ease; white-space:nowrap;';
+        btn.addEventListener('mouseenter', () => { if (!isCurrent) btn.style.background = 'rgba(10,12,16,.06)'; });
+        btn.addEventListener('mouseleave', () => { btn.style.background = 'none'; });
+        btn.addEventListener('click', () => this.goToNav(k));
+        labelsWrap.appendChild(btn);
+      });
+    };
+
+    const updateArrows = () => {
+      const atStart = this.currentNav <= 0;
+      const atEnd = this.currentNav >= NAV_ITEMS.length - 1;
+      prevBtn.style.opacity = atStart ? '0.32' : '1';
+      prevBtn.style.cursor = atStart ? 'default' : 'pointer';
+      prevBtn.disabled = atStart;
+      nextBtn.style.opacity = atEnd ? '0.32' : '1';
+      nextBtn.style.cursor = atEnd ? 'default' : 'pointer';
+      nextBtn.disabled = atEnd;
+    };
+
+    this.goToNav = (idx) => {
+      idx = Math.min(NAV_ITEMS.length - 1, Math.max(0, idx));
+      const prevPageId = NAV_ITEMS[this.currentNav] ? NAV_ITEMS[this.currentNav].pageId : null;
+      this.currentNav = idx;
+      const pageId = NAV_ITEMS[idx].pageId;
+      applyPageClasses(pageId);
+      renderLabels();
+      updateArrows();
+      const activeEl = pageEls[pageId];
+      if (activeEl) activeEl.scrollTop = 0;
+      if (pageId !== prevPageId) {
+        if (pageId === 'page-2') this.renderTopSpenders();
+        if (pageId === 'page-3') this.renderSlope();
+      }
+    };
+
+    prevBtn.addEventListener('click', () => this.goToNav(this.currentNav - 1));
+    nextBtn.addEventListener('click', () => this.goToNav(this.currentNav + 1));
+
+    const interactiveTags = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'];
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      const ae = document.activeElement;
+      if (ae) {
+        if (interactiveTags.includes(ae.tagName)) return;
+        if (ae.getAttribute && ae.getAttribute('role') === 'slider') return;
+      }
+      if (e.key === 'ArrowLeft') this.goToNav(this.currentNav - 1);
+      if (e.key === 'ArrowRight') this.goToNav(this.currentNav + 1);
     });
+
+    applyPageClasses('hero');
+    renderLabels();
+    updateArrows();
+    window.addEventListener('resize', renderLabels);
   }
 }
 
